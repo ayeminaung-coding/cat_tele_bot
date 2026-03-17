@@ -1,0 +1,61 @@
+"""
+config.py — Loads and validates all environment variables.
+"""
+import os
+from dataclasses import dataclass, field
+from typing import List
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+def _require(key: str) -> str:
+    val = os.getenv(key, "").strip()
+    if not val:
+        raise EnvironmentError(f"Missing required environment variable: {key}")
+    return val
+
+
+def _get_admin_ids() -> List[int]:
+    raw = _require("ADMIN_IDS")
+    try:
+        return [int(x.strip()) for x in raw.split(",") if x.strip()]
+    except ValueError:
+        raise EnvironmentError("ADMIN_IDS must be comma-separated integers")
+
+
+@dataclass(frozen=True)
+class Settings:
+    BOT_TOKEN: str
+    WEBHOOK_URL: str
+    ADMIN_GROUP_ID: int
+    VIP_CHANNEL_ID: int
+    ADMIN_IDS: List[int]
+    SUPABASE_URL: str
+    SUPABASE_SERVICE_KEY: str
+    KBZPAY_PHONE: str
+    KBZPAY_NAME: str
+    PORT: int
+    USE_UNIQUE_AMOUNT: bool
+    MAX_FILE_SIZE: int
+
+
+def load_settings() -> Settings:
+    return Settings(
+        BOT_TOKEN=_require("BOT_TOKEN"),
+        WEBHOOK_URL=_require("WEBHOOK_URL").rstrip("/"),
+        ADMIN_GROUP_ID=int(_require("ADMIN_GROUP_ID")),
+        VIP_CHANNEL_ID=int(_require("VIP_CHANNEL_ID")),
+        ADMIN_IDS=_get_admin_ids(),
+        SUPABASE_URL=_require("SUPABASE_URL"),
+        SUPABASE_SERVICE_KEY=_require("SUPABASE_SERVICE_KEY"),
+        KBZPAY_PHONE=os.getenv("KBZPAY_PHONE", "09-XXX-XXXXXXX"),
+        KBZPAY_NAME=os.getenv("KBZPAY_NAME", "VIP Bot"),
+        PORT=int(os.getenv("PORT", "8000")),
+        USE_UNIQUE_AMOUNT=os.getenv("USE_UNIQUE_AMOUNT", "true").lower() == "true",
+        MAX_FILE_SIZE=int(os.getenv("MAX_FILE_SIZE", "5242880")),
+    )
+
+
+# Singleton — imported everywhere
+settings = load_settings()
