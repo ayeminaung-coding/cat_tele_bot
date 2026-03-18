@@ -1,15 +1,11 @@
 """
-handlers/message_router.py — Routes admin text replies to the correct user.
-
-When an admin replies (using Telegram's reply feature) to a forwarded
-payment message in the admin group, this handler finds the original user
-and forwards the admin's text to them.
+handlers/message_router.py — Routes admin replies (Text, Media, Documents) to the correct user.
 """
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from db.payments import get_payment_by_admin_msg_id
+from db.orders import get_order_by_admin_msg_id
 from db.logs import log_action
 from config import settings
 from utils.retry import async_retry
@@ -17,60 +13,55 @@ from utils.retry import async_retry
 logger = logging.getLogger(__name__)
 
 
-async def handle_admin_text_reply(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Called when an admin sends a text reply to a payment message in admin group.
-    Only runs if:
-      - Chat is admin group
-      - Message is a reply (reply_to_message exists)
-      - Sender is a registered admin
+    Called when an admin sends ANY message as a reply to a forwarded order in the admin group.
+    Forwards text, videos, documents, or photos back to the corresponding user.
     """
     message = update.message
     admin_user = update.effective_user
 
-    # ── Security: only registered admins ───────────────────
     if admin_user.id not in settings.ADMIN_IDS:
         return
-
     if not message.reply_to_message:
         return
 
     replied_msg_id = message.reply_to_message.message_id
-
-    # ── Find linked payment ─────────────────────────────────
-    payment = await get_payment_by_admin_msg_id(replied_msg_id)
-    if not payment:
-        logger.info(f"Admin replied to msg {replied_msg_id} but no payment linked.")
+    order = await get_order_by_admin_msg_id(replied_msg_id)
+    if not order:
         return
 
-    user_id: int = payment["user_id"]
-    admin_text = message.text or ""
-
-    if not admin_text.strip():
-        return
-
-    # ── Forward to user ─────────────────────────────────────
-    forwarded_text = (
-        f"📩 Admin မှ သတင်းစကား:\n\n{admin_text}"
-    )
+    user_id: int = order["user_id"]
+    order_id: str = order["id"]
 
     try:
-        await async_retry(
-            lambda: context.bot.send_message(
+        # Use copy_message so it duplicates the EXACT media/text without the "Forwarded from" header
+        copied_msg = await async_retry(
+            lambda: context.bot.copy_message(
                 chat_id=user_id,
-                text=forwarded_text,
+                from_chat_id=message.chat_id,
+                message_id=message.message_id,
             ),
-            label="admin_reply_to_user",
+            label="copy_message_to_user",
         )
-        logger.info(f"Forwarded admin msg to user {user_id}")
+        logger.info(f"Copied admin msg to user {user_id}")
     except Exception as e:
-        logger.error(f"Failed to forward admin reply to user {user_id}: {e}")
+        logger.error(f"Failed to copy admin reply to user {user_id}: {e}")
         return
 
+    # Keep track in DB
+    detail_text = f"msg_id={copied_msg.message_id}"
+    if message.text:
+        detail_text += f", text={message.text[:50]}"
+    elif message.video:
+        detail_text += ", type=video"
+    elif message.document:
+        detail_text += ", type=document"
+
     await log_action(
-        action_type="admin_message_sent",
+        action_type="admin_delivery_sent",
         admin_id=admin_user.id,
         user_id=user_id,
-        payment_id=payment.get("id"),
-        detail=f"text={admin_text[:80]}",
+        order_id=order_id,
+        detail=detail_text
     )

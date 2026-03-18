@@ -1,41 +1,36 @@
 """
 data/keyboards.py — Inline keyboard builders.
 """
+from typing import List, Dict, Any
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from data.plans import PLANS
 
 
-def plan_selection_keyboard() -> InlineKeyboardMarkup:
-    """One button per plan, each carrying the plan id as callback data."""
-    buttons = [
-        [InlineKeyboardButton(
-            text=f"{'✨' if p['id'] == 'life' else '📦'} {p['name']} — {p['price']:,} ကျပ်",
-            callback_data=f"plan:{p['id']}",
-        )]
-        for p in PLANS
-    ]
+def main_menu_keyboard() -> InlineKeyboardMarkup:
+    """Main menu on /start"""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🎬 ဗီဒီယို တစ်ကားဝယ်မည်", callback_data="buy:single")],
+        [InlineKeyboardButton("📦 ဗီဒီယို ၁၅ ကား အစုလိုက်ဝယ်မည်", callback_data="buy:bundle")]
+    ])
+
+
+def single_video_selection_keyboard(videos: List[Dict[str, Any]]) -> InlineKeyboardMarkup:
+    """Dynamically build list of videos from the DB"""
+    buttons = []
+    for vid in videos:
+        icon = "✅" if vid["status"] == "available" else "❌"
+        text = f"{icon} {vid['title']}"
+        buttons.append([InlineKeyboardButton(text, callback_data=f"video:{vid['id']}")])
+    
+    # Back button
+    buttons.append([InlineKeyboardButton("🔙 ပြန်ထွက်မည်", callback_data="back_to_main")])
     return InlineKeyboardMarkup(buttons)
 
 
-def admin_action_keyboard(payment_id: str) -> InlineKeyboardMarkup:
+def admin_action_keyboard(order_id: str) -> InlineKeyboardMarkup:
     """Approve / Reject buttons sent to admin group."""
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("✅ အတည်ပြုမည်", callback_data=f"approve:{payment_id}"),
-            InlineKeyboardButton("❌ ငြင်းပယ်မည်", callback_data=f"reject:{payment_id}"),
+            InlineKeyboardButton("✅ အတည်ပြုမည်", callback_data=f"approve:{order_id}"),
+            InlineKeyboardButton("❌ ငြင်းပယ်မည်", callback_data=f"reject:{order_id}"),
         ]
-    ])
-
-
-def retry_keyboard() -> InlineKeyboardMarkup:
-    """Shown to user after rejection so they can restart."""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔄 ထပ်မံ ကြိုးစားရန်", callback_data="retry")]
-    ])
-
-
-def view_plans_keyboard() -> InlineKeyboardMarkup:
-    """Shown on /start welcome message."""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📋 အစီအစဉ်များ ကြည့်ရန်", callback_data="retry")]
     ])

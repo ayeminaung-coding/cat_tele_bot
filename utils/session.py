@@ -1,19 +1,13 @@
 """
 utils/session.py — Async-safe in-memory session manager.
-
-States:
-    IDLE                 → initial / after reset
-    PLAN_SELECTED        → user chose a plan
-    AWAITING_SCREENSHOT  → payment instructions shown, waiting for image
 """
 import asyncio
 import time
-from typing import Optional
 
-SESSION_TTL = 30 * 60  # 30 minutes idle → auto-reset
+SESSION_TTL = 30 * 60  # 30 minutes idle
 
 IDLE = "IDLE"
-PLAN_SELECTED = "PLAN_SELECTED"
+SELECTING_VIDEO = "SELECTING_VIDEO"
 AWAITING_SCREENSHOT = "AWAITING_SCREENSHOT"
 
 
@@ -25,15 +19,15 @@ class SessionManager:
     def _default(self) -> dict:
         return {
             "state": IDLE,
-            "plan_id": None,
-            "amount": None,
+            "order_type": None,  # 'single' or 'bundle'
+            "video_id": None,    # populated if 'single'
+            "amount": None,      # 1000 or 5000
             "updated_at": time.time(),
         }
 
     async def get(self, user_id: int) -> dict:
         async with self._lock:
             session = self._sessions.get(user_id, self._default())
-            # Auto-expire idle sessions
             if time.time() - session.get("updated_at", 0) > SESSION_TTL:
                 session = self._default()
                 self._sessions[user_id] = session

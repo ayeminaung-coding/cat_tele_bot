@@ -12,7 +12,7 @@ async def log_action(
     action_type: str,
     admin_id: Optional[int] = None,
     user_id: Optional[int] = None,
-    payment_id: Optional[str] = None,
+    order_id: Optional[str] = None,
     detail: Optional[str] = None,
 ) -> None:
     """
@@ -25,7 +25,7 @@ async def log_action(
             "action_type": action_type,
             "admin_id": admin_id,
             "user_id": user_id,
-            "payment_id": payment_id,
+            "order_id": order_id,
             "detail": detail,
         }).execute()
     except Exception as e:
