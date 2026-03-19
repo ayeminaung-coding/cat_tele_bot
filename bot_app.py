@@ -47,13 +47,7 @@ def build_application() -> Application:
     # ── Text Handlers for Old Reply Keyboards ──────────────
     app.add_handler(MessageHandler(filters.Text("🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ် - 1000 ကျပ်"), handle_buy_single_text))
     app.add_handler(MessageHandler(filters.Text("📦 ဇာတ်လမ်း 15ပုဒ်စာ VIPဝင်မယ် - 5000 ကျပ်"), handle_buy_bundle_text))    
-    # Generic User Text Fallback (Send to Admin)
-    app.add_handler(
-        MessageHandler(
-            filters.TEXT & filters.ChatType.PRIVATE & ~filters.COMMAND,
-            handle_user_text,
-        )
-    )
+
     # ── Inline button callbacks ────────────────────────────
     # Main menu selections, video selection, and back buttons
     app.add_handler(CallbackQueryHandler(handle_callback, pattern=r"^(buy:|video:|back_to_main|retry)"))
@@ -84,6 +78,15 @@ def build_application() -> Application:
         MessageHandler(
             filters.Chat(settings.ADMIN_GROUP_ID) & filters.REPLY & ~filters.COMMAND,
             handle_admin_reply,
+        )
+    )
+
+    # Generic User Text Fallback (Send to Admin)
+    # MUST BE LAST so it doesn't swallow conversation state texts
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & filters.ChatType.PRIVATE & ~filters.COMMAND,
+            handle_user_text,
         )
     )
 
