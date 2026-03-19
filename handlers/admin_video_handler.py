@@ -232,10 +232,19 @@ async def setvideolink_cancel_cmd(update: Update, context: ContextTypes.DEFAULT_
 # ════════════════════════════════════════════════════════════
 
 async def setbundletext_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Entry: /setbundletext — asks admin to enter the new bundle info text."""
+    """Entry: /setbundletext — asks admin to enter the new bundle info text or sets it directly."""
     if update.effective_user.id not in settings.ADMIN_IDS:
         await update.message.reply_text(ADMIN_ONLY)
         return ConversationHandler.END
+
+    # If the user typed something after the command, save it directly
+    command_text = update.message.text
+    if " " in command_text:
+        new_text = command_text.split(" ", 1)[1].strip()
+        if new_text:
+            set_bundle_info(new_text)
+            await update.message.reply_text("✅ Bundle ဇာတ်လမ်းစာရင်း အသစ်ကို သိမ်းဆည်းပြီးပါပြီ။")
+            return ConversationHandler.END
 
     current_text = get_bundle_info()
     msg = (

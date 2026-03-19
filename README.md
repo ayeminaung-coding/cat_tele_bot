@@ -162,10 +162,22 @@ telegram_vip_bot/
 
 ---
 
-## VIP Plans (edit in `data/plans.py`)
+## Commands List
 
-| Plan | Price | Duration |
-|---|---|---|
-| တစ်လ (1 Month) | 5,000 MMK | 30 days |
-| သုံးလ (3 Months) | 12,000 MMK | 90 days |
-| တစ်သက်တာ (Lifetime) | 30,000 MMK | Forever |
+### 👤 User Commands
+| Command | Description |
+|---|---|
+| `/start` | Start the bot, register the user, and show the main purchase menu. |
+| *(Any Text)* | If a user types text instead of clicking a button, it is forwarded to the Admin Group as a **Support Ticket**. |
+
+### 🛠️ Admin Commands (Must be in `ADMIN_IDS`)
+| Command | Description |
+|---|---|
+| `/addvideo` | Start an interactive flow to add a new video to the single-purchase list. Asks for Title, then Price. |
+| `/deletevideo` | Open an inline list of all currently available videos to select and delete them from the database. |
+| `/setvideolink` | Set the target Telegram invite/channel link for a specific video. When users buy this video, they receive this link automatically upon approval. |
+| `/setbundletext` | Update the text displayed when a user clicks the "Bundle" purchase option. |
+| `/cancel` | Cancel any ongoing admin flow (adding, deleting, link setting) without saving. |
+| *(Reply to Support)* | If an admin **Replies** to a Support Ticket or Payment inside the Admin Group with Text, Photo, or Video, the bot will secretly copy and forward that reply directly to the User's DM! |
+
+---
