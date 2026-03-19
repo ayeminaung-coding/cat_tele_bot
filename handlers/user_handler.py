@@ -19,6 +19,29 @@ from utils.session import IDLE, SELECTING_VIDEO, AWAITING_SCREENSHOT
 logger = logging.getLogger(__name__)
 
 
+from config import settings
+
+async def handle_user_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Fallback handler for generic text messages. Forwards them to the admin group."""
+    user = update.effective_user
+    text = update.message.text
+    
+    # Send a quick acknowledgment
+    await update.message.reply_text("📨 သင်၏မက်ဆေ့ခ်ျကို Admin ထံသို့ ပေးပို့လိုက်ပါသည်။ Admin မှ အမြန်ဆုံး အကြောင်းပြန်ပေးပါမည်။")
+    
+    # Forward to admin group
+    admin_msg = (
+        f"📩 <b>#SupportTicket</b>\n"
+        f"User: <a href='tg://user?id={user.id}'>{user.full_name}</a>\n"
+        f"ID: <code>{user.id}</code>\n\n"
+        f"{text}"
+    )
+    await context.bot.send_message(
+        chat_id=settings.ADMIN_GROUP_ID,
+        text=admin_msg,
+        parse_mode="HTML"
+    )
+
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     if not user:

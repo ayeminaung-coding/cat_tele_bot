@@ -26,7 +26,35 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if not message.reply_to_message:
         return
 
-    replied_msg_id = message.reply_to_message.message_id
+    replied_msg = message.reply_to_message
+
+    # Check if replied message is a Support Ticket
+    if replied_msg.text and "📩 #SupportTicket" in replied_msg.text:
+        # Extract user ID
+        import re
+        match = re.search(r"ID:\s*(\d+)", replied_msg.text)
+        if match:
+            user_id = int(match.group(1))
+            try:
+                # Tell the user it's an admin reply if it's text
+                if message.text:
+                    await context.bot.send_message(
+                        chat_id=user_id,
+                        text=f"👨‍💻 <b>Admin Reply:</b>\n\n{message.text}",
+                        parse_mode="HTML"
+                    )
+                else:
+                    await context.bot.copy_message(
+                        chat_id=user_id,
+                        from_chat_id=message.chat_id,
+                        message_id=message.message_id,
+                    )
+                logger.info(f"Copied admin support reply to user {user_id}")
+            except Exception as e:
+                logger.error(f"Failed to copy admin support reply to user {user_id}: {e}")
+            return
+
+    replied_msg_id = replied_msg.message_id
     order = await get_order_by_admin_msg_id(replied_msg_id)
     if not order:
         return

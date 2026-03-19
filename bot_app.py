@@ -14,6 +14,7 @@ from handlers.user_handler import (
     handle_callback,
     handle_buy_single_text,
     handle_buy_bundle_text,
+    handle_user_text,
 )
 from handlers.payment_handler import handle_screenshot
 from handlers.admin_handler import handle_admin_callback
@@ -45,8 +46,14 @@ def build_application() -> Application:
     
     # ── Text Handlers for Old Reply Keyboards ──────────────
     app.add_handler(MessageHandler(filters.Text("🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ် - 1000 ကျပ်"), handle_buy_single_text))
-    app.add_handler(MessageHandler(filters.Text("📦 ဇာတ်လမ်း 15ပုဒ် အစုလိုက် VIPဝင်မယ် - 5000 ကျပ်"), handle_buy_bundle_text))
-
+    app.add_handler(MessageHandler(filters.Text("📦 ဇာတ်လမ်း 15ပုဒ် အစုလိုက် VIPဝင်မယ် - 5000 ကျပ်"), handle_buy_bundle_text))    
+    # Generic User Text Fallback (Send to Admin)
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & filters.ChatType.PRIVATE & ~filters.COMMAND,
+            handle_user_text,
+        )
+    )
     # ── Inline button callbacks ────────────────────────────
     # Main menu selections, video selection, and back buttons
     app.add_handler(CallbackQueryHandler(handle_callback, pattern=r"^(buy:|video:|back_to_main|retry)"))
