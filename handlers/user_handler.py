@@ -12,7 +12,7 @@ from data.messages import (
     SINGLE_VIDEO_HEADER, video_unavailable,
     single_payment_instructions, bundle_payment_instructions,
 )
-from data.keyboards import main_menu_keyboard, single_video_selection_keyboard
+from data.keyboards import main_menu_keyboard, single_video_selection_keyboard, back_to_main_keyboard
 from utils.session import IDLE, SELECTING_VIDEO, AWAITING_SCREENSHOT
 
 logger = logging.getLogger(__name__)
@@ -43,6 +43,25 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     )
 
 
+async def handle_buy_bundle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.effective_user
+    sm = context.bot_data["session_manager"]
+    amount = 5000
+    await sm.set(user.id, state=AWAITING_SCREENSHOT, order_type="bundle", amount=amount)
+    await update.message.reply_text(bundle_payment_instructions(amount), reply_markup=back_to_main_keyboard())
+
+
+async def handle_buy_single_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.effective_user
+    sm = context.bot_data["session_manager"]
+    await sm.set(user.id, state=SELECTING_VIDEO, order_type="single")
+    videos = await get_all_videos()
+    await update.message.reply_text(
+        SINGLE_VIDEO_HEADER,
+        reply_markup=single_video_selection_keyboard(videos)
+    )
+
+
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handles all inline keyboard interactions related to ordering."""
     query = update.callback_query
@@ -55,8 +74,15 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     # Return to main menu
     if data == "back_to_main" or data == "retry":
         await sm.reset(user.id)
-        await query.edit_message_text(
-            WELCOME,
+        # ReplyKeyboardMarkup can't be attached via edit_message_text.
+        # Strategy: remove the inline keyboard from the old message, then send a fresh welcome.
+        try:
+            await query.edit_message_reply_markup(reply_markup=None)  # strip inline buttons
+        except Exception:
+            pass  # message may already be gone — that's fine
+        await context.bot.send_message(
+            chat_id=user.id,
+            text=WELCOME,
             reply_markup=main_menu_keyboard(),
         )
         return
@@ -65,7 +91,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if data == "buy:bundle":
         amount = 5000
         await sm.set(user.id, state=AWAITING_SCREENSHOT, order_type="bundle", amount=amount)
-        await query.edit_message_text(bundle_payment_instructions(amount))
+        await query.edit_message_text(bundle_payment_instructions(amount), reply_markup=back_to_main_keyboard())
         return
 
     # ── BUY SINGLE ──────────────────────────────────────────

@@ -13,7 +13,6 @@ from db.logs import log_action
 from data.messages import (
     PAYMENT_RECEIVED,
     INVALID_FILE_TYPE,
-    FILE_TOO_LARGE,
     NOT_IN_PAYMENT_FLOW,
     UPLOAD_FAILED,
 )
@@ -60,17 +59,35 @@ async def handle_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.message.reply_text(INVALID_FILE_TYPE)
         return
 
-    from config import settings
-    if file_size > settings.MAX_FILE_SIZE:
-        await update.message.reply_text(FILE_TOO_LARGE)
-        return
-
-    # ── Download and Upload ──────────────────────────────
+    # ── Download and Optimization ────────────────────────
     try:
         tg_file = await context.bot.get_file(file_id)
         buf = io.BytesIO()
         await tg_file.download_to_memory(buf)
         file_bytes = buf.getvalue()
+
+        # Try to compress the image if it's large using PIL
+        try:
+            from PIL import Image
+            img = Image.open(io.BytesIO(file_bytes))
+            
+            # Convert to RGB to safely save as JPEG
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+                
+            # Resize if too large
+            _MAX_DIMENSION = 1920
+            img.thumbnail((_MAX_DIMENSION, _MAX_DIMENSION), Image.Resampling.LANCZOS)
+            
+            out_buf = io.BytesIO()
+            img.save(out_buf, format="JPEG", quality=75, optimize=True)
+            file_bytes = out_buf.getvalue()
+            mime_type = "image/jpeg"
+        except ImportError:
+            logger.warning("Pillow not installed, skipping compression.")
+        except Exception as e:
+            logger.error(f"Image compression failed, using original bytes: {e}")
+
     except Exception as e:
         logger.error(f"Failed to download file: {e}")
         await update.message.reply_text(UPLOAD_FAILED)

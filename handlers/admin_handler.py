@@ -15,6 +15,7 @@ from db.logs import log_action
 from data.messages import (
     REJECTION_MESSAGE,
     approval_message,
+    bundle_approval_message,
     admin_caption,
     admin_approved_caption,
     admin_rejected_caption,
@@ -80,14 +81,39 @@ async def handle_admin_callback(update: Update, context: ContextTypes.DEFAULT_TY
             await query.answer("⚠️ ဤ payment ကို ရှိပြီးသား အတည်ပြုပြီးဖြစ်သည်!", show_alert=True)
             return
 
-        # Tell user to wait for manual delivery
+        # Auto-generate invite link for bundle orders
+        order_type = order.get("type", "")
+        msg_text = approval_message()
+
+        if order_type == "bundle":
+            try:
+                invite_link = await context.bot.create_chat_invite_link(
+                    chat_id=settings.VIP_CHANNEL_ID,
+                    member_limit=1,
+                    name=f"Order {order_id}"
+                )
+                msg_text = bundle_approval_message(invite_link.invite_link)
+            except Exception as e:
+                logger.error(f"Failed to create VIP invite link: {e}")
+
         try:
+            from data.keyboards import after_payment_keyboard
+            # Send the approval/invite link message WITHOUT any button so it stays permanently
             await async_retry(
                 lambda: context.bot.send_message(
                     chat_id=user_id,
-                    text=approval_message()
+                    text=msg_text,
                 ),
                 label="send_approval"
+            )
+            # Send the "Back to Main" button as a separate follow-up message
+            await async_retry(
+                lambda: context.bot.send_message(
+                    chat_id=user_id,
+                    text="ထပ်မံဝယ်ယူလိုပါက အောက်မှ နှိပ်ပါ 👇",
+                    reply_markup=after_payment_keyboard()
+                ),
+                label="send_approval_nav"
             )
         except Exception as e:
             logger.error(f"Failed to notify user {user_id}: {e}")
@@ -113,11 +139,12 @@ async def handle_admin_callback(update: Update, context: ContextTypes.DEFAULT_TY
         await update_order_status(order_id, "rejected")
 
         try:
-            from data.keyboards import main_menu_keyboard
+            from data.keyboards import after_payment_keyboard
             await async_retry(
                 lambda: context.bot.send_message(
                     chat_id=user_id,
-                    text=REJECTION_MESSAGE
+                    text=REJECTION_MESSAGE,
+                    reply_markup=after_payment_keyboard()
                 ),
                 label="send_rejection",
             )
