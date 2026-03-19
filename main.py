@@ -10,6 +10,7 @@ from telegram import Update
 
 from bot_app import build_application
 from config import settings
+from utils.update_dispatcher import UpdateDispatcher
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -19,6 +20,11 @@ logger = logging.getLogger(__name__)
 
 # Build PTB application (singleton)
 ptb_app = build_application()
+dispatcher = UpdateDispatcher(
+    app=ptb_app,
+    workers=settings.UPDATE_WORKERS,
+    queue_size=settings.UPDATE_QUEUE_SIZE,
+)
 
 
 @asynccontextmanager
@@ -33,7 +39,12 @@ async def lifespan(app: FastAPI):
     )
     logger.info(f"✅ Webhook set → {webhook_url}")
     await ptb_app.start()
+    await dispatcher.start()
     yield
+    await dispatcher.stop()
+    session_manager = ptb_app.bot_data.get("session_manager")
+    if session_manager and hasattr(session_manager, "close"):
+        await session_manager.close()
     await ptb_app.stop()
     await ptb_app.bot.delete_webhook()
     await ptb_app.shutdown()
@@ -48,8 +59,9 @@ async def telegram_webhook(request: Request) -> Response:
     """Receive Telegram update and dispatch asynchronously."""
     try:
         body = await request.json()
-        update = Update.de_json(data=body, bot=ptb_app.bot)
-        await ptb_app.process_update(update)
+        if not dispatcher.enqueue_raw(body):
+            logger.warning("Update queue is full; rejecting update for retry")
+            return Response(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
     except Exception as e:
         logger.error(f"Webhook processing error: {e}")
     return Response(status_code=status.HTTP_200_OK)

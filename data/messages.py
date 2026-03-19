@@ -102,7 +102,9 @@ def admin_caption(
     order_id: str,
     video_title: str | None = None
 ) -> str:
-    uname = f"@{username}" if username else "မရှိ"
+    # Use HTML markdown linking so clicking the name goes directly to their DM
+    profile_link = f"<a href='tg://user?id={user_id}'>{first_name}</a>"
+    uname = f"@{username}" if username else "(username မရှိ)"
     
     if order_type == "single":
         item_text = f"🎬 ဇာတ်ကား တစ်ကား : {video_title}"
@@ -112,11 +114,11 @@ def admin_caption(
     return (
         f"💰 ငွေပေးချေမှု တင်ပြချက်\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
-        f"👤 အမည်  : {first_name} ({uname})\n"
-        f"🆔 User ID  : {user_id}\n"
+        f"👤 အမည်  : {profile_link} ({uname})\n"
+        f"🆔 User ID  : <code>{user_id}</code>\n"
         f"{item_text}\n"
         f"💵 ပမာဏ  : {amount:,} ကျပ်\n"
-        f"🔑 Order ID  : {order_id}\n"
+        f"🔑 Order ID  : <code>{order_id}</code>\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
         f"⬇️ အောက်မှ ဆုံးဖြတ်ချက်ချပါ:"
     )

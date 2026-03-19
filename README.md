@@ -54,9 +54,28 @@ ngrok http 8000
 python -m uvicorn main:app --reload --port 8000
 ```
 
-### 6. Deploy to production
+### 6. Deploy to production (Google Cloud Run)
+
+Since the bot uses background queues to process webhooks concurrently, **Cloud Run must be configured with "CPU always allocated" (`--no-cpu-throttling`)**. If CPU is throttled after the webhook returns, the background tasks will freeze.
+
 ```bash
-# Railway / Render / Fly.io
+# 1. Build and deploy to Cloud Run
+gcloud run deploy telegram-vip-bot \
+  --source . \
+  --allow-unauthenticated \
+  --cpu 1 \
+  --memory 512Mi \
+  --no-cpu-throttling \
+  --min-instances 1 \
+  --max-instances 10
+
+# 2. Set all Environment Variables in the Cloud Console
+# Make sure to set REDIS_URL if you are scaling past 1 instance
+# Make sure to grab the newly generated Service URL and update WEBHOOK_URL!
+```
+
+### 7. Other Platforms (Railway / Render / Fly.io)
+```bash
 # Set all environment variables in the platform dashboard
 # Start command:
 uvicorn main:app --host 0.0.0.0 --port $PORT
@@ -115,6 +134,15 @@ telegram_vip_bot/
 | `PORT` | ❌ | Server port (default: 8000) |
 | `USE_UNIQUE_AMOUNT` | ❌ | Unique amount offset (default: true) |
 | `MAX_FILE_SIZE` | ❌ | Max screenshot size bytes (default: 5MB) |
+| `REDIS_URL` | ❌ | Redis connection URL for shared session state (recommended in production) |
+| `UPDATE_WORKERS` | ❌ | Background workers for webhook update processing (default: 8) |
+| `UPDATE_QUEUE_SIZE` | ❌ | Max queued webhook updates before returning 503 (default: 1000) |
+
+### Production tuning notes
+
+- Use a stable domain for `WEBHOOK_URL` (avoid temporary ngrok URLs in production).
+- Set `REDIS_URL` when running multiple app instances/workers.
+- Start with `UPDATE_WORKERS=8` and `UPDATE_QUEUE_SIZE=1000`, then tune using real traffic metrics.
 
 ---
 

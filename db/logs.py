@@ -4,6 +4,7 @@ db/logs.py — Action logging to Supabase logs table.
 from typing import Optional
 from db.client import get_supabase
 import logging
+from utils.db_async import run_blocking
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +22,14 @@ async def log_action(
     """
     try:
         sb = get_supabase()
-        sb.table("logs").insert({
-            "action_type": action_type,
-            "admin_id": admin_id,
-            "user_id": user_id,
-            "order_id": order_id,
-            "detail": detail,
-        }).execute()
+        await run_blocking(
+            lambda: sb.table("logs").insert({
+                "action_type": action_type,
+                "admin_id": admin_id,
+                "user_id": user_id,
+                "order_id": order_id,
+                "detail": detail,
+            }).execute()
+        )
     except Exception as e:
         logger.error(f"[LOG FALLBACK] action={action_type} user={user_id} detail={detail} | err={e}")

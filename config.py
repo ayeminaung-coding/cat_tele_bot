@@ -38,6 +38,9 @@ class Settings:
     PORT: int
     USE_UNIQUE_AMOUNT: bool
     MAX_FILE_SIZE: int
+    REDIS_URL: str
+    UPDATE_WORKERS: int
+    UPDATE_QUEUE_SIZE: int
 
 
 def load_settings() -> Settings:
@@ -54,6 +57,9 @@ def load_settings() -> Settings:
         PORT=int(os.getenv("PORT", "8000")),
         USE_UNIQUE_AMOUNT=os.getenv("USE_UNIQUE_AMOUNT", "true").lower() == "true",
         MAX_FILE_SIZE=int(os.getenv("MAX_FILE_SIZE", "5242880")),
+        REDIS_URL=os.getenv("REDIS_URL", "").strip(),
+        UPDATE_WORKERS=int(os.getenv("UPDATE_WORKERS", "8")),
+        UPDATE_QUEUE_SIZE=int(os.getenv("UPDATE_QUEUE_SIZE", "1000")),
     )
 
 

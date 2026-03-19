@@ -3,6 +3,7 @@ db/orders.py — Order CRUD operations (replaces payments.py).
 """
 from typing import Optional
 from db.client import get_supabase
+from utils.db_async import run_blocking
 
 
 async def create_order(
@@ -14,8 +15,8 @@ async def create_order(
 ) -> str:
     """Insert a new pending order. Returns the order UUID."""
     sb = get_supabase()
-    result = (
-        sb.table("orders")
+    result = await run_blocking(
+        lambda: sb.table("orders")
         .insert({
             "user_id": user_id,
             "type": order_type,
@@ -31,8 +32,8 @@ async def create_order(
 
 async def get_order_by_id(order_id: str) -> Optional[dict]:
     sb = get_supabase()
-    result = (
-        sb.table("orders")
+    result = await run_blocking(
+        lambda: sb.table("orders")
         .select("*")
         .eq("id", order_id)
         .maybe_single()
@@ -44,8 +45,8 @@ async def get_order_by_id(order_id: str) -> Optional[dict]:
 async def get_order_by_admin_msg_id(admin_msg_id: int) -> Optional[dict]:
     """Find an order via the forwarded admin group message ID."""
     sb = get_supabase()
-    result = (
-        sb.table("orders")
+    result = await run_blocking(
+        lambda: sb.table("orders")
         .select("*")
         .eq("admin_msg_id", admin_msg_id)
         .maybe_single()
@@ -56,7 +57,9 @@ async def get_order_by_admin_msg_id(admin_msg_id: int) -> Optional[dict]:
 
 async def set_admin_msg_id(order_id: str, admin_msg_id: int) -> None:
     sb = get_supabase()
-    sb.table("orders").update({"admin_msg_id": admin_msg_id}).eq("id", order_id).execute()
+    await run_blocking(
+        lambda: sb.table("orders").update({"admin_msg_id": admin_msg_id}).eq("id", order_id).execute()
+    )
 
 
 async def is_duplicate_approval(order_id: str) -> bool:
@@ -71,4 +74,4 @@ async def update_order_status(
 ) -> None:
     """Update order status."""
     sb = get_supabase()
-    sb.table("orders").update({"status": status}).eq("id", order_id).execute()
+    await run_blocking(lambda: sb.table("orders").update({"status": status}).eq("id", order_id).execute())

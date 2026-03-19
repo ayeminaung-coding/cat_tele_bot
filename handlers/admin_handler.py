@@ -46,6 +46,7 @@ async def forward_to_admin(
                 chat_id=settings.ADMIN_GROUP_ID,
                 photo=file_id,
                 caption=caption,
+                parse_mode="HTML",
                 reply_markup=admin_action_keyboard(order_id),
             ),
             label="forward_to_admin",

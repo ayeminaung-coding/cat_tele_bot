@@ -29,7 +29,7 @@ from handlers.admin_video_handler import (
 )
 from handlers.message_router import handle_admin_reply
 from handlers.error_handler import handle_error
-from utils.session import SessionManager
+from utils.session import create_session_manager
 
 
 def build_application() -> Application:
@@ -39,7 +39,7 @@ def build_application() -> Application:
         .build()
     )
 
-    app.bot_data["session_manager"] = SessionManager()
+    app.bot_data["session_manager"] = create_session_manager()
 
     # ── User-side commands ─────────────────────────────────
     app.add_handler(CommandHandler("start", start_command))
