@@ -43,3 +43,9 @@ async def delete_video(video_id: str) -> None:
     sb = get_supabase()
     sb.table("videos").delete().eq("id", video_id).execute()
 
+
+async def set_video_link(video_id: str, link: str) -> None:
+    """Store a channel/invite link for a specific video."""
+    sb = get_supabase()
+    sb.table("videos").update({"channel_link": link}).eq("id", video_id).execute()
+

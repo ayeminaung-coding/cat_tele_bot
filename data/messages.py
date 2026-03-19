@@ -12,7 +12,7 @@ WELCOME = (
 BANNED = (
     "⛔ အကောင့်ကို ပိတ်ဆို့ထားသောကြောင့်\n"
     "ဝန်ဆောင်မှုကို ရယူ၍မရနိုင်ပါ။\n"
-    "Admin ထံ ဆက်သွယ်ပါ။"
+    "Admin ထံ ဆက်သွယ်ပါ။ @whitecatadmin"
 )
 
 # ── SINGLE VIDEO FLOW ───────────────────────────────────────────────────────
@@ -27,15 +27,16 @@ def video_unavailable(title: str) -> str:
 
 def single_payment_instructions(title: str, amount: int) -> str:
     return (
-        f"💳 ငွေပေးချေနည်း (KBZPay)\n\n"
+        f"💳 ငွေပေးချေနည်း (KBZPay / Wave Pay နှစ်ခုလုံး အောက်က နံပါတ်ကိုလွှဲပေးပါနော်..)\n\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
         f"🎬 ဗီဒီယို : {title}\n"
         f"💰 ပမာဏ  : {amount:,} ကျပ် ⚠️ (တိကျစွာ ပေးပို့ပါ)\n\n"
         f"📱 KBZPay နံပတ်  : {settings.KBZPAY_PHONE}\n"
         f"👤 အမည်  : {settings.KBZPAY_NAME}\n"
+        f"📋 Note   : Noteမှာ drama လို့ရေးပေးနော်❤️\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"ငွေပေးချေပြီးပါက 📸 ငွေပေးချေမှု screenshot ကို\n"
-        f"ဤ chat တွင် ပေးပို့ပါ။"
+        f"ဒီ chat တွင် ပေးပို့ပါ.."
     )
 
 # ── BUNDLE FLOW ─────────────────────────────────────────────────────────────
@@ -48,9 +49,10 @@ def bundle_payment_instructions(amount: int) -> str:
         f"💰 ပမာဏ  : {amount:,} ကျပ် ⚠️ (တိကျစွာ ပေးပို့ပါ)\n\n"
         f"📱 KBZPay နံပတ်  : {settings.KBZPAY_PHONE}\n"
         f"👤 အမည်  : {settings.KBZPAY_NAME}\n"
+        f"📋 Note   : Noteမှာ drama လို့ရေးပေးနော်❤️\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"ငွေပေးချေပြီးပါက 📸 ငွေပေးချေမှု screenshot ကို\n"
-        f"ဤ chat တွင် ပေးပို့ပါ။"
+        f"ဒီ chat တွင် ပေးပို့ပါ.."
     )
 
 # ── PAYMENT COMMON ─────────────────────────────────────────────────────────
@@ -58,7 +60,7 @@ def bundle_payment_instructions(amount: int) -> str:
 PAYMENT_RECEIVED = (
     "✅ Screenshot လက်ခံရရှိပြီ!\n\n"
     "⏳ Admin မှ စစ်ဆေးနေဆဲဖြစ်ပါတယ်နော်\n"
-    "အတည်ပြုပြီးပါက ဗီဒီယိုများကို ဤ chat မှာ တိုက်ရိုက် ပေးပို့ပေးပါမယ်နော်\n\n"
+    "အတည်ပြုပြီးပါက ဗီဒီယိုများကို ဒီ chat မှာ တိုက်ရိုက် ပေးပို့ပေးပါမယ်နော်\n\n"
     "ကျေးဇူးတင်ပါတယ်ရှင့် 🙏"
 )
 
@@ -75,7 +77,7 @@ def bundle_approval_message(invite_link: str) -> str:
         f"🎉 ငွေပေးချေမှု အောင်မြင်ပါသည်။\n\n"
         f"အောက်ပါ လင့်ခ်မှတဆင့် VIP Channel သို့ ဝင်ရောက်နိုင်ပါပြီ👇\n"
         f"{invite_link}\n\n"
-        f"⚠️ မှတ်ချက်။ ။ ဤလင့်ခ်သည် ၁ ယောက်သာ ဝင်ခွင့်ရှိပြီး၊ ဝင်ပြီးသည်နှင့် အလိုအလျောက် ပျက်သွားမည်ဖြစ်သည်။"
+        f"⚠️ မှတ်ချက်။ ။ အပေါ်က လင့်ခ်သည် ၁ ယောက်သာ ဝင်ခွင့်ရှိပြီး၊ ဝင်ပြီးသည်နှင့် အလိုအလျောက် ပျက်သွားမည်ဖြစ်သည်"
     )
 
 REJECTION_MESSAGE = (
@@ -141,7 +143,7 @@ NOT_IN_PAYMENT_FLOW = (
 GENERIC_ERROR = (
     "😔 တစ်ခုခု မှားယွင်းသွားပါသည်။\n"
     "ခဏစောင့်ပြီး ထပ်မံ ကြိုးစားကြည့်ပါ။\n"
-    "ပြဿနာ ဆက်ရှိနေပါက Admin ထံ ဆက်သွယ်ပါ။"
+    "ပြဿနာ ဆက်ရှိနေပါက Admin ထံ ဆက်သွယ်ပါ။ \n ဆက်သွယ်ရန် - @whitecatadmin"
 )
 
 UPLOAD_FAILED = (
@@ -194,3 +196,33 @@ def delete_video_success(title: str) -> str:
 
 
 DELETE_VIDEO_CANCELLED = "❌ ဖျက်ခြင်း ပယ်ဖျက်ပြီ။"
+
+# ── SETVIDEOLINK FLOW ───────────────────────────────────────────────────────
+
+ASK_SETLINK_VIDEO = "🔗 Link ထည့်ခှက်မည့် ဗီဒီယိုကို ရွေးချယ်ပါ:"
+
+ASK_SETLINK_URL = (
+    "📨 Channel / Video လင့်ခ်ကို ရိုက်ထည့်ပါ:\n"
+    "(ဥပမာ: https://t.me/+xxxx )\n\n"
+    "(လုပ်ငန်းစဥ်ကို ရပ်တန့်ရန် /cancel ကိုနှိပ်ပါ။)"
+)
+
+
+def setlink_success(title: str) -> str:
+    return f"✅ '{title}' အတွက် Link သိမ်ပြီ!"
+
+
+SETLINK_CANCELLED = "❌ Link သတ်သွင်းခြင်း ပယ်ဖျက်ပြီ။"
+
+
+# ── SINGLE VIDEO APPROVAL WITH LINK ────────────────────────────────────────
+
+def single_approval_with_link(title: str, link: str) -> str:
+    return (
+        f"🎉 ငွေပေးချေမှု အောင်မြင်ပါတယ်..\n\n"
+        f"🎬 ဗီဒီယိုအမည် : {title}\n\n"
+        f"🔗 အောက်ကြည့်အတွက် လင့်ခ်ကို အောက်ပါ:\n"
+        f"{link}\n\n"
+        f"⚠️ မှတ်ချက် — ‌admi‌n မှ တစ်နာရီအတွင်း approve လုပ်ပေးပါမယ်နော်..\n "
+        f"ခန လောက် စောင့်ပေးပါနော် .. \n ကျေးဇူးတင်ပါတယ်ရှင့် 🙏"
+    )

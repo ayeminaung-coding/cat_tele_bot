@@ -51,7 +51,7 @@ ngrok http 8000
 # Copy the https URL → set as WEBHOOK_URL in .env
 
 # Terminal 2 — start bot
-uvicorn main:app --reload --port 8000
+python -m uvicorn main:app --reload --port 8000
 ```
 
 ### 6. Deploy to production

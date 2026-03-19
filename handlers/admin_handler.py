@@ -16,6 +16,7 @@ from data.messages import (
     REJECTION_MESSAGE,
     approval_message,
     bundle_approval_message,
+    single_approval_with_link,
     admin_caption,
     admin_approved_caption,
     admin_rejected_caption,
@@ -81,7 +82,7 @@ async def handle_admin_callback(update: Update, context: ContextTypes.DEFAULT_TY
             await query.answer("⚠️ ဤ payment ကို ရှိပြီးသား အတည်ပြုပြီးဖြစ်သည်!", show_alert=True)
             return
 
-        # Auto-generate invite link for bundle orders
+        # Build the approval message
         order_type = order.get("type", "")
         msg_text = approval_message()
 
@@ -95,6 +96,16 @@ async def handle_admin_callback(update: Update, context: ContextTypes.DEFAULT_TY
                 msg_text = bundle_approval_message(invite_link.invite_link)
             except Exception as e:
                 logger.error(f"Failed to create VIP invite link: {e}")
+
+        elif order_type == "single":
+            # Auto-send the stored channel link if one exists for this video
+            from db.videos import get_video
+            video_id = order.get("video_id")
+            if video_id:
+                video = await get_video(video_id)
+                channel_link = video.get("channel_link") if video else None
+                if channel_link:
+                    msg_text = single_approval_with_link(video.get("title", ""), channel_link)
 
         try:
             from data.keyboards import after_payment_keyboard

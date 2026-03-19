@@ -70,3 +70,15 @@ def delete_confirm_keyboard(video_id: str) -> InlineKeyboardMarkup:
             InlineKeyboardButton("❌ မဖျက်ပါ", callback_data="del_cancel"),
         ]
     ])
+
+
+def set_video_link_keyboard(videos: List[Dict[str, Any]]) -> InlineKeyboardMarkup:
+    """List of all videos for admin setvideolink selection."""
+    buttons = []
+    for v in videos:
+        has_link = "🔗" if v.get("channel_link") else "➕"
+        buttons.append([
+            InlineKeyboardButton(f"{has_link} {v['title']}", callback_data=f"setlink_select:{v['id']}")
+        ])
+    buttons.append([InlineKeyboardButton("❌ ပယ်ဖျက်ပြီ", callback_data="setlink_cancel")])
+    return InlineKeyboardMarkup(buttons)

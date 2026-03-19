@@ -13,7 +13,7 @@ from telegram.ext import (
 )
 
 from config import settings
-from db.videos import get_all_videos, add_video, delete_video, get_video
+from db.videos import get_all_videos, add_video, delete_video, get_video, set_video_link
 from data.messages import (
     ADMIN_ONLY,
     ASK_VIDEO_TITLE,
@@ -26,14 +26,23 @@ from data.messages import (
     delete_confirm_prompt,
     delete_video_success,
     DELETE_VIDEO_CANCELLED,
+    ASK_SETLINK_VIDEO,
+    ASK_SETLINK_URL,
+    setlink_success,
+    SETLINK_CANCELLED,
 )
-from data.keyboards import delete_video_list_keyboard, delete_confirm_keyboard
+from data.keyboards import (
+    delete_video_list_keyboard,
+    delete_confirm_keyboard,
+    set_video_link_keyboard,
+)
 
 logger = logging.getLogger(__name__)
 
 # ── ConversationHandler states ──────────────────────────────────
 WAITING_TITLE = 0
 WAITING_PRICE = 1
+WAITING_LINK  = 2  # used by setvideolink conv
 
 
 # ══════════════════════════════════════════════════════════════
@@ -144,9 +153,81 @@ async def handle_delete_cancel(update: Update, context: ContextTypes.DEFAULT_TYP
     await query.edit_message_text(DELETE_VIDEO_CANCELLED)
 
 
-# ══════════════════════════════════════════════════════════════
-#  ConversationHandler factory (call this from bot_app.py)
-# ══════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════
+#  SET VIDEO LINK FLOW  (/setvideolink)
+# ════════════════════════════════════════════════════════════
+
+async def setvideolink_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Entry: /setvideolink — shows inline list of videos."""
+    if update.effective_user.id not in settings.ADMIN_IDS:
+        await update.message.reply_text(ADMIN_ONLY)
+        return ConversationHandler.END
+
+    videos = await get_all_videos()
+    if not videos:
+        await update.message.reply_text(NO_VIDEOS_TO_DELETE)
+        return ConversationHandler.END
+
+    await update.message.reply_text(
+        ASK_SETLINK_VIDEO,
+        reply_markup=set_video_link_keyboard(videos),
+    )
+    return WAITING_LINK
+
+
+async def setvideolink_pick(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin tapped a video — store the ID and ask for the URL."""
+    query = update.callback_query
+    await query.answer()
+
+    video_id = query.data.split(":", 1)[1]
+    video = await get_video(video_id)
+    if not video:
+        await query.edit_message_text("\u2753 \u1017\u102e\u1012\u102e\u101a\u102d\u102f \u101b\u103e\u102c\u1019\u1010\u103d\u1031\u1037\u1015\u102b\u104b")
+        return ConversationHandler.END
+
+    context.user_data["setlink_video_id"] = video_id
+    context.user_data["setlink_video_title"] = video["title"]
+    await query.edit_message_text(f"{ASK_SETLINK_URL}\n\n({video['title']})")
+    return WAITING_LINK
+
+
+async def setvideolink_save(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin sent the URL — save it to DB and confirm."""
+    link = update.message.text.strip()
+    video_id = context.user_data.pop("setlink_video_id", None)
+    title = context.user_data.pop("setlink_video_title", "")
+
+    if not video_id:
+        await update.message.reply_text(SETLINK_CANCELLED)
+        return ConversationHandler.END
+
+    await set_video_link(video_id, link)
+    await update.message.reply_text(setlink_success(title))
+    return ConversationHandler.END
+
+
+async def setvideolink_cancel_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin tapped cancel in the video picker."""
+    query = update.callback_query
+    await query.answer()
+    context.user_data.pop("setlink_video_id", None)
+    context.user_data.pop("setlink_video_title", None)
+    await query.edit_message_text(SETLINK_CANCELLED)
+    return ConversationHandler.END
+
+
+async def setvideolink_cancel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin sent /cancel during the flow."""
+    context.user_data.pop("setlink_video_id", None)
+    context.user_data.pop("setlink_video_title", None)
+    await update.message.reply_text(SETLINK_CANCELLED)
+    return ConversationHandler.END
+
+
+# ════════════════════════════════════════════════════════════
+#  ConversationHandler factories (call these from bot_app.py)
+# ════════════════════════════════════════════════════════════
 
 def build_addvideo_conv() -> ConversationHandler:
     return ConversationHandler(
@@ -156,6 +237,24 @@ def build_addvideo_conv() -> ConversationHandler:
             WAITING_PRICE: [MessageHandler(filters.TEXT & ~filters.COMMAND, addvideo_get_price)],
         },
         fallbacks=[CommandHandler("cancel", addvideo_cancel)],
+        per_chat=True,
+        per_user=True,
+    )
+
+
+def build_setvideolink_conv() -> ConversationHandler:
+    return ConversationHandler(
+        entry_points=[CommandHandler("setvideolink", setvideolink_start)],
+        states={
+            WAITING_LINK: [
+                # Step 1: admin picks a video via inline button
+                CallbackQueryHandler(setvideolink_pick, pattern=r"^setlink_select:"),
+                CallbackQueryHandler(setvideolink_cancel_cb, pattern=r"^setlink_cancel$"),
+                # Step 2: admin types the URL
+                MessageHandler(filters.TEXT & ~filters.COMMAND, setvideolink_save),
+            ],
+        },
+        fallbacks=[CommandHandler("cancel", setvideolink_cancel_cmd)],
         per_chat=True,
         per_user=True,
     )

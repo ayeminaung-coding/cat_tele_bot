@@ -19,6 +19,7 @@ from handlers.payment_handler import handle_screenshot
 from handlers.admin_handler import handle_admin_callback
 from handlers.admin_video_handler import (
     build_addvideo_conv,
+    build_setvideolink_conv,
     deletevideo_start,
     handle_delete_select,
     handle_delete_confirm,
@@ -54,6 +55,7 @@ def build_application() -> Application:
 
     # ── Admin video management ─────────────────────────────
     app.add_handler(build_addvideo_conv())
+    app.add_handler(build_setvideolink_conv())
     app.add_handler(CommandHandler("deletevideo", deletevideo_start))
     app.add_handler(CallbackQueryHandler(handle_delete_select, pattern=r"^del_select:"))
     app.add_handler(CallbackQueryHandler(handle_delete_confirm, pattern=r"^del_confirm:"))
