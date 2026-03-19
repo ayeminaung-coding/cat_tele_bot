@@ -45,10 +45,17 @@ def after_payment_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton("🔙 ပင်မစာမျက်နှာသို့ ပြန်သွားမည်", callback_data="back_to_main")]
     ])
 
+def buy_bundle_confirm_keyboard() -> InlineKeyboardMarkup:
+    """Button to confirm bundle purchase after reading info."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("✅ ဝယ်မယ်", callback_data="buy:bundle")],
+        [InlineKeyboardButton("🔙 ပြန်ထွက်မယ်", callback_data="back_to_main")]
+    ])
+
 def back_to_main_keyboard() -> InlineKeyboardMarkup:
     """Simple back button to return to main menu from payment instructions."""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 ပြန်ထွက်မည်", callback_data="back_to_main")]
+        [InlineKeyboardButton("🔙 ပြန်ထွက်မယ်", callback_data="back_to_main")]
     ])
 
 

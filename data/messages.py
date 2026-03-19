@@ -30,29 +30,31 @@ def single_payment_instructions(title: str, amount: int) -> str:
         f"💳 ငွေပေးချေနည်း (KBZPay / Wave Pay နှစ်ခုလုံး အောက်က နံပါတ်ကိုလွှဲပေးပါနော်..)\n\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
         f"🎬 ဇာတ်ကား : {title}\n"
-        f"💰 ပမာဏ  : {amount:,} ကျပ်\n\n"
-        f"📱 KBZPay နံပတ်  : {settings.KBZPAY_PHONE}\n"
+        f"💰 စျေးနှုန်း  : {amount:,} ကျပ်\n\n"
+        f"📱 လွှဲရမည့် နံပါတ်  : {settings.KBZPAY_PHONE}\n"
         f"👤 အမည်  : {settings.KBZPAY_NAME}\n"
         f"📋 Note   : Noteမှာ drama လို့ရေးပေးနော်❤️\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"ငွေပေးချေပြီးပါက 📸 ငွေပေးချေမှု screenshot ကို\n"
-        f"ဒီ chat တွင် ပေးပို့ပါ.."
+        f"ငွေပေးချေပြီးပါက 📸 ငွေပေးချေမှု screenshot ကို "
+        f"ဒီ chat ထဲမှာ ပို့ပေးပါနော် ❤️‍🔥.."
     )
+
+from data.bundle_manager import get_bundle_info
 
 # ── BUNDLE FLOW ─────────────────────────────────────────────────────────────
 
 def bundle_payment_instructions(amount: int) -> str:
     return (
-        f"💳 ငွေပေးချေနည်း (KBZPay/Wave Pay နှစ်ခုလုံး အောက်က နံပါတ်ကိုလွှဲပေးပါနော်..)\n\n"
+        f"💳 ငွေပေးချေနည်း \n (KBZPay/Wave Pay နှစ်ခုလုံး အောက်က နံပါတ်ကို လွှဲပေးပါနော်..)\n\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
         f"📦 အမျိုးအစား : ၁၅ ပုဒ် VIP ဝင်မည်\n"
-        f"💰 ပမာဏ  : {amount:,} ကျပ်\n\n"
-        f"📱 KBZPay နံပတ်  : {settings.KBZPAY_PHONE}\n"
+        f"💰 စျေးနှုန်း  : {amount:,} ကျပ်\n\n"
+        f"📱 လွှဲရမည့် နံပါတ်  : {settings.KBZPAY_PHONE}\n"
         f"👤 အမည်  : {settings.KBZPAY_NAME}\n"
         f"📋 Note   : Noteမှာ drama လို့ရေးပေးနော်❤️\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"ငွေပေးချေပြီးပါက 📸 ငွေပေးချေမှု screenshot ကို\n"
-        f"ဒီ chat တွင် ပေးပို့ပါ.."
+        f"ငွေပေးချေပြီးပါက 📸 ငွေပေးချေမှု screenshot ကို "
+        f"ဒီ chat ထဲမှာ ပို့ပေးပါနော် ❤️‍🔥.."
     )
 
 # ── PAYMENT COMMON ─────────────────────────────────────────────────────────

@@ -14,6 +14,7 @@ from telegram.ext import (
 
 from config import settings
 from db.videos import get_all_videos, add_video, delete_video, get_video, set_video_link
+from data.bundle_manager import set_bundle_info, get_bundle_info
 from data.messages import (
     ADMIN_ONLY,
     ASK_VIDEO_TITLE,
@@ -43,6 +44,7 @@ logger = logging.getLogger(__name__)
 WAITING_TITLE = 0
 WAITING_PRICE = 1
 WAITING_LINK  = 2  # used by setvideolink conv
+WAITING_BUNDLE_TEXT = 3 # used by setbundletext conv
 
 
 # ══════════════════════════════════════════════════════════════
@@ -226,6 +228,38 @@ async def setvideolink_cancel_cmd(update: Update, context: ContextTypes.DEFAULT_
 
 
 # ════════════════════════════════════════════════════════════
+#  SET BUNDLE TEXT FLOW  (/setbundletext)
+# ════════════════════════════════════════════════════════════
+
+async def setbundletext_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Entry: /setbundletext — asks admin to enter the new bundle info text."""
+    if update.effective_user.id not in settings.ADMIN_IDS:
+        await update.message.reply_text(ADMIN_ONLY)
+        return ConversationHandler.END
+
+    current_text = get_bundle_info()
+    msg = (
+        f"📝 ယခုလက်ရှိ Bundle ဇာတ်လမ်းစာရင်း:\n\n{current_text}\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"ကျေးဇူးပြု၍ Bundle အသစ်အတွက် စာသား(Text)ကို ရိုက်ထည့်ပါ။\n"
+        f"(လုပ်ငန်းစဥ်ကို ရပ်တန့်ရန် /cancel ကိုနှိပ်ပါ။)"
+    )
+    await update.message.reply_text(msg)
+    return WAITING_BUNDLE_TEXT
+
+async def setbundletext_save(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin sent new bundle text."""
+    new_text = update.message.text.strip()
+    set_bundle_info(new_text)
+    await update.message.reply_text("✅ Bundle ဇာတ်လမ်းစာရင်း အသစ်ကို သိမ်းဆည်းပြီးပါပြီ။")
+    return ConversationHandler.END
+
+async def setbundletext_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin sent /cancel during bundle text update."""
+    await update.message.reply_text("❌ Bundle ဇာတ်လမ်းစာရင်း ပြင်ဆင်ခြင်းကို ပယ်ဖျက်လိုက်ပါသည်။")
+    return ConversationHandler.END
+
+# ════════════════════════════════════════════════════════════
 #  ConversationHandler factories (call these from bot_app.py)
 # ════════════════════════════════════════════════════════════
 
@@ -255,6 +289,17 @@ def build_setvideolink_conv() -> ConversationHandler:
             ],
         },
         fallbacks=[CommandHandler("cancel", setvideolink_cancel_cmd)],
+        per_chat=True,
+        per_user=True,
+    )
+
+def build_setbundletext_conv() -> ConversationHandler:
+    return ConversationHandler(
+        entry_points=[CommandHandler("setbundletext", setbundletext_start)],
+        states={
+            WAITING_BUNDLE_TEXT: [MessageHandler(filters.TEXT & ~filters.COMMAND, setbundletext_save)],
+        },
+        fallbacks=[CommandHandler("cancel", setbundletext_cancel)],
         per_chat=True,
         per_user=True,
     )

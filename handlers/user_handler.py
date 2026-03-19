@@ -7,12 +7,13 @@ from telegram.ext import ContextTypes
 
 from db.users import upsert_user, get_user
 from db.videos import get_all_videos, get_video
+from data.bundle_manager import get_bundle_info
 from data.messages import (
     WELCOME, BANNED,
     SINGLE_VIDEO_HEADER, video_unavailable,
     single_payment_instructions, bundle_payment_instructions,
 )
-from data.keyboards import main_menu_keyboard, single_video_selection_keyboard, back_to_main_keyboard
+from data.keyboards import main_menu_keyboard, single_video_selection_keyboard, back_to_main_keyboard, buy_bundle_confirm_keyboard
 from utils.session import IDLE, SELECTING_VIDEO, AWAITING_SCREENSHOT
 
 logger = logging.getLogger(__name__)
@@ -47,8 +48,11 @@ async def handle_buy_bundle_text(update: Update, context: ContextTypes.DEFAULT_T
     user = update.effective_user
     sm = context.bot_data["session_manager"]
     amount = 5000
-    await sm.set(user.id, state=AWAITING_SCREENSHOT, order_type="bundle", amount=amount)
-    await update.message.reply_text(bundle_payment_instructions(amount), reply_markup=back_to_main_keyboard())
+    bundle_text = get_bundle_info()
+    await update.message.reply_text(
+        bundle_text,
+        reply_markup=buy_bundle_confirm_keyboard()
+    )
 
 
 async def handle_buy_single_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -91,7 +95,11 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if data == "buy:bundle":
         amount = 5000
         await sm.set(user.id, state=AWAITING_SCREENSHOT, order_type="bundle", amount=amount)
-        await query.edit_message_text(bundle_payment_instructions(amount), reply_markup=back_to_main_keyboard())
+        
+        await query.edit_message_text(
+            text=bundle_payment_instructions(amount),
+            reply_markup=back_to_main_keyboard()
+        )
         return
 
     # ── BUY SINGLE ──────────────────────────────────────────
