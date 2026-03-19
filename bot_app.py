@@ -43,8 +43,8 @@ def build_application() -> Application:
     app.add_handler(CommandHandler("start", start_command))
     
     # ── Text Handlers for Old Reply Keyboards ──────────────
-    app.add_handler(MessageHandler(filters.Text("🎬 VIP တစ်ပုဒ်ပဲ ဝယ်မယ်"), handle_buy_single_text))
-    app.add_handler(MessageHandler(filters.Text("📦 VIP ၁၅ ပုဒ် အစုလိုက် ဝယ်မယ်"), handle_buy_bundle_text))
+    app.add_handler(MessageHandler(filters.Text("🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ် - 1000 ကျပ်"), handle_buy_single_text))
+    app.add_handler(MessageHandler(filters.Text("📦 ဇာတ်လမ်း 15ပုဒ် အစုလိုက် VIPဝင်မယ် - 5000 ကျပ်"), handle_buy_bundle_text))
 
     # ── Inline button callbacks ────────────────────────────
     # Main menu selections, video selection, and back buttons

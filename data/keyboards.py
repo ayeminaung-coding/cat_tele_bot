@@ -9,8 +9,8 @@ def main_menu_keyboard() -> ReplyKeyboardMarkup:
     """Persistent reply keyboard shown on /start and after returning to main menu."""
     return ReplyKeyboardMarkup(
         [
-            ["🎬 VIP တစ်ပုဒ်ပဲ ဝယ်မယ်"],
-            ["📦 VIP ၁၅ ပုဒ် အစုလိုက် ဝယ်မယ်"],
+            ["🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ် - 1000 ကျပ်"],
+            ["📦 ဇာတ်လမ်း 15ပုဒ် အစုလိုက် VIPဝင်မယ် - 5000 ကျပ်"],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -66,7 +66,7 @@ def delete_confirm_keyboard(video_id: str) -> InlineKeyboardMarkup:
     """Confirm / cancel inline keyboard for deleting a specific video."""
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("✅ တိုကျည် ဖျက်မည်", callback_data=f"del_confirm:{video_id}"),
+            InlineKeyboardButton("✅ ဖျက်မည်", callback_data=f"del_confirm:{video_id}"),
             InlineKeyboardButton("❌ မဖျက်ပါ", callback_data="del_cancel"),
         ]
     ])
