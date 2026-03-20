@@ -26,6 +26,21 @@ from utils.retry import async_retry
 
 logger = logging.getLogger(__name__)
 
+async def userstats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Show admin stats about users."""
+    if update.effective_user.id not in settings.ADMIN_IDS:
+        await update.message.reply_text("⛔ ဤ command ကို Admin သာ သုံးနိုင်သည်။")
+        return
+
+    from db.users import get_user_stats
+    stats = await get_user_stats()
+    
+    msg = (
+        "📊 <b>Bot User Statistics</b>\n\n"
+        f"👥 Total Users: <b>{stats['total']}</b>\n"
+        f"🆕 Joined Today: <b>{stats['daily']}</b>"
+    )
+    await update.message.reply_text(msg, parse_mode="HTML")
 
 async def forward_to_admin(
     context: ContextTypes.DEFAULT_TYPE,

@@ -41,3 +41,28 @@ async def set_user_status(telegram_id: int, status: str) -> None:
     await run_blocking(
         lambda: sb.table("users").update({"status": status}).eq("telegram_id", telegram_id).execute()
     )
+
+
+async def get_user_stats() -> dict:
+    """Fetch total users and users joined today."""
+    from datetime import datetime, timezone
+    sb = get_supabase()
+    
+    # Total users
+    res_total = await run_blocking(
+        lambda: sb.table("users").select("telegram_id", count="exact").limit(0).execute()
+    )
+    total = res_total.count if res_total.count is not None else 0
+    
+    # Daily users (joined today)
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    res_daily = await run_blocking(
+        lambda: sb.table("users")
+        .select("telegram_id", count="exact")
+        .gte("created_at", today_start)
+        .limit(0)
+        .execute()
+    )
+    daily = res_daily.count if res_daily.count is not None else 0
+    
+    return {"total": total, "daily": daily}

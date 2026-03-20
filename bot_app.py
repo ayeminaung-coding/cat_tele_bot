@@ -17,7 +17,7 @@ from handlers.user_handler import (
     handle_user_text,
 )
 from handlers.payment_handler import handle_screenshot
-from handlers.admin_handler import handle_admin_callback
+from handlers.admin_handler import handle_admin_callback, userstats_command
 from handlers.admin_video_handler import (
     build_addvideo_conv,
     build_setvideolink_conv,
@@ -56,6 +56,7 @@ def build_application() -> Application:
     app.add_handler(CallbackQueryHandler(handle_admin_callback, pattern=r"^(approve|reject):"))
 
     # ── Admin video management ─────────────────────────────
+    app.add_handler(CommandHandler("userstats", userstats_command))
     app.add_handler(build_addvideo_conv())
     app.add_handler(build_setvideolink_conv())
     app.add_handler(build_setbundletext_conv())
