@@ -22,12 +22,13 @@ CREATE TABLE users (
 
 -- ── Videos ───────────────────────────────────────────────────
 CREATE TABLE videos (
-    id          VARCHAR PRIMARY KEY,     -- e.g., 'vid_01'
-    title       TEXT NOT NULL,
-    status      TEXT NOT NULL DEFAULT 'available'
-                    CHECK (status IN ('available', 'unavailable')),
-    price       INTEGER NOT NULL DEFAULT 1000,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id           VARCHAR PRIMARY KEY,     -- e.g., 'vid_01'
+    title        TEXT NOT NULL,
+    status       TEXT NOT NULL DEFAULT 'available'
+                     CHECK (status IN ('available', 'unavailable')),
+    price        INTEGER NOT NULL DEFAULT 1000,
+    channel_link TEXT,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ── Orders ───────────────────────────────────────────────────

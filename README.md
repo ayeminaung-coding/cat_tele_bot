@@ -177,6 +177,7 @@ telegram_vip_bot/
 | `/deletevideo` | Open an inline list of all currently available videos to select and delete them from the database. |
 | `/setvideolink` | Set the target Telegram invite/channel link for a specific video. When users buy this video, they receive this link automatically upon approval. |
 | `/setbundletext` | Update the text displayed when a user clicks the "Bundle" purchase option. |
+| `/userstats` | View a quick statistical report of the total number of users and users who joined today. |
 | `/cancel` | Cancel any ongoing admin flow (adding, deleting, link setting) without saving. |
 | *(Reply to Support)* | If an admin **Replies** to a Support Ticket or Payment inside the Admin Group with Text, Photo, or Video, the bot will secretly copy and forward that reply directly to the User's DM! |
 
