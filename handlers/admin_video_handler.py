@@ -85,8 +85,18 @@ async def addvideo_get_price(update: Update, context: ContextTypes.DEFAULT_TYPE)
     price = int(text)
     title = context.user_data.pop("new_video_title", "")
 
-    await add_video(title, price)
-    await update.message.reply_text(add_video_success(title, price))
+    try:
+        created = await add_video(title, price)
+        created_id = created.get("id") if isinstance(created, dict) else None
+        if created_id:
+            saved = await get_video(created_id)
+            if not saved:
+                raise RuntimeError("Insert did not persist in database")
+        await update.message.reply_text(add_video_success(title, price))
+    except Exception as e:
+        logger.error(f"Failed to add video: {e}", exc_info=True)
+        await update.message.reply_text(f"❌ ဒေတာဘေ့စ်သို့ သိမ်းဆည်းရာတွင် အမှားအယွင်းဖြစ်နေပါသည်။\nအမှား: {e}")
+        
     return ConversationHandler.END
 
 

@@ -1,7 +1,7 @@
 """
 db/videos.py — Fetching and managing videos in DB.
 """
-import time
+import uuid
 from typing import List, Dict, Any
 from db.client import get_supabase
 from utils.db_async import run_blocking
@@ -30,13 +30,16 @@ async def get_video(video_id: str) -> Dict[str, Any] | None:
 async def add_video(title: str, price: int) -> Dict[str, Any]:
     """Insert a new video. Returns the created row."""
     sb = get_supabase()
-    video_id = f"vid_{int(time.time())}"
+    # Use UUID-based IDs to avoid collisions when admins add videos in the same second.
+    video_id = f"vid_{uuid.uuid4().hex[:12]}"
     result = await run_blocking(
         lambda: sb.table("videos")
         .insert({"id": video_id, "title": title, "price": price, "status": "available"})
         .execute()
     )
-    return result.data[0]
+    if result and hasattr(result, "data") and result.data:
+        return result.data[0]
+    return {"id": video_id, "title": title, "price": price, "status": "available"}
 
 
 async def delete_video(video_id: str) -> None:

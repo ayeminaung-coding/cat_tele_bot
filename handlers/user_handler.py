@@ -2,6 +2,7 @@
 handlers/user_handler.py — /start command and video selection.
 """
 import logging
+from pathlib import Path
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -44,33 +45,30 @@ async def handle_user_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 async def send_welcome_message(chat_id: int, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Helper functional to send welcome text, images and the keyboard."""
-    import os
     from telegram import InputMediaPhoto
 
-    # 1. Send the text first
-    await context.bot.send_message(chat_id=chat_id, text=WELCOME)
+    # 1. Try to send the two images first (as an album/media group)
+    project_root = Path(__file__).resolve().parent.parent
+    img1 = project_root / "assets" / "plan1.jpg"
+    img2 = project_root / "assets" / "plan2.jpg"
 
-    # 2. Try to send the two images (as an album/media group under the text)
-    img1 = "assets/plan1.jpg"
-    img2 = "assets/plan2.jpg"
-
-    if os.path.exists(img1) and os.path.exists(img2):
+    if img1.exists() and img2.exists():
         try:
-            await context.bot.send_media_group(
-                chat_id=chat_id,
-                media=[
-                    InputMediaPhoto(open(img1, "rb")),
-                    InputMediaPhoto(open(img2, "rb"))
-                ]
-            )
+            with img1.open("rb") as f1, img2.open("rb") as f2:
+                await context.bot.send_media_group(
+                    chat_id=chat_id,
+                    media=[
+                        InputMediaPhoto(f1),
+                        InputMediaPhoto(f2),
+                    ],
+                )
         except Exception as e:
             logger.error(f"Failed to send welcome images: {e}")
 
-    # 3. Send a brief call-to-action to attach the reply keyboard
-    # (Reply keyboards persist better when attached to latest message)
+    # 2. Send welcome text after images and attach reply keyboard.
     await context.bot.send_message(
         chat_id=chat_id,
-        text="👇 အောက်ပါ ရွေးချယ်စရာများမှ တစ်ခုကို နှိပ်ပါ...",
+        text=WELCOME,
         reply_markup=main_menu_keyboard(),
     )
 
