@@ -39,7 +39,19 @@ async def add_video(title: str, price: int) -> Dict[str, Any]:
     )
     if result and hasattr(result, "data") and result.data:
         return result.data[0]
-    return {"id": video_id, "title": title, "price": price, "status": "available"}
+
+    # Some API paths can return an empty representation; verify the row exists.
+    verify = await run_blocking(
+        lambda: sb.table("videos")
+        .select("*")
+        .eq("id", video_id)
+        .maybe_single()
+        .execute()
+    )
+    if verify and hasattr(verify, "data") and verify.data:
+        return verify.data
+
+    raise RuntimeError("Insert failed: no row returned and no row found by id")
 
 
 async def delete_video(video_id: str) -> None:

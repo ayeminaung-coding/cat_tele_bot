@@ -14,6 +14,7 @@ from telegram.ext import (
 
 from config import settings
 from db.videos import get_all_videos, add_video, delete_video, get_video, set_video_link, set_video_channel_id
+from db.logs import log_action
 from data.bundle_manager import set_bundle_info, get_bundle_info
 from data.messages import (
     ADMIN_ONLY,
@@ -84,6 +85,7 @@ async def addvideo_get_price(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     price = int(text)
     title = context.user_data.pop("new_video_title", "")
+    admin_id = update.effective_user.id if update.effective_user else None
 
     try:
         created = await add_video(title, price)
@@ -92,10 +94,15 @@ async def addvideo_get_price(update: Update, context: ContextTypes.DEFAULT_TYPE)
             saved = await get_video(created_id)
             if not saved:
                 raise RuntimeError("Insert did not persist in database")
-        await update.message.reply_text(add_video_success(title, price))
+        await update.message.reply_text(
+            f"{add_video_success(title, price)}\n🆔 Video ID: <code>{created_id or 'unknown'}</code>",
+            parse_mode="HTML",
+        )
+        await log_action("add_video", admin_id=admin_id, detail=f"id={created_id} title={title} price={price}")
     except Exception as e:
         logger.error(f"Failed to add video: {e}", exc_info=True)
         await update.message.reply_text(f"❌ ဒေတာဘေ့စ်သို့ သိမ်းဆည်းရာတွင် အမှားအယွင်းဖြစ်နေပါသည်။\nအမှား: {e}")
+        await log_action("add_video_error", admin_id=admin_id, detail=f"title={title} price={price} err={e}")
         
     return ConversationHandler.END
 
