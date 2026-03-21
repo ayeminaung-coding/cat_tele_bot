@@ -220,6 +220,17 @@ def setlink_success(title: str) -> str:
 
 SETLINK_CANCELLED = "❌ Link သတ်သွင်းခြင်း ပယ်ဖျက်ပြီ။"
 
+ASK_SETCHANNELID_VIDEO = "🆔 Channel ID ထည့်သွင်းမည့် ဇာတ်ကားကို ရွေးချယ်ပါ:"
+ASK_SETCHANNELID_ID = (
+    "📨 Telegram Channel ID (-100... ဖြင့်စသော ဂဏန်းများ) ကို ပေးပို့ပါ:\n"
+    "(လုပ်ငန်းစဥ်ကို ရပ်တန့်ရန် /cancel ကိုနှိပ်ပါ။)"
+)
+
+def setchannelid_success(title: str) -> str:
+    return f"✅ '{title}' အတွက် Channel ID သိမ်းပြီ!"
+
+SETCHANNELID_CANCELLED = "❌ Channel ID သတ်မှတ်ခြင်း ပယ်ဖျက်ပြီ။"
+
 
 # ── SINGLE VIDEO APPROVAL WITH LINK ────────────────────────────────────────
 

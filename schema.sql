@@ -3,6 +3,10 @@
 -- Run this in Supabase SQL Editor (Dashboard → SQL Editor)
 -- ============================================================
 
+-- ⚠️ PRODUCTION MIGRATION (Run this line if updating an existing database):
+-- ALTER TABLE videos ADD COLUMN IF NOT EXISTS channel_id BIGINT;
+-- ============================================================
+
 -- Drop old tables if they exist (Migration)
 DROP TABLE IF EXISTS logs CASCADE;
 DROP TABLE IF EXISTS payments CASCADE;
@@ -28,6 +32,7 @@ CREATE TABLE videos (
                      CHECK (status IN ('available', 'unavailable')),
     price        INTEGER NOT NULL DEFAULT 1000,
     channel_link TEXT,
+    channel_id   BIGINT,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

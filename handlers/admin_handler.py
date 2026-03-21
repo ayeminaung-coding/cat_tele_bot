@@ -119,9 +119,25 @@ async def handle_admin_callback(update: Update, context: ContextTypes.DEFAULT_TY
             video_id = order.get("video_id")
             if video_id:
                 video = await get_video(video_id)
-                channel_link = video.get("channel_link") if video else None
-                if channel_link:
-                    msg_text = single_approval_with_link(video.get("title", ""), channel_link)
+                if video:
+                    channel_id = video.get("channel_id")
+                    if channel_id:
+                        try:
+                            invite_link = await context.bot.create_chat_invite_link(
+                                chat_id=channel_id,
+                                member_limit=1,
+                                name=f"Order {order_id}"
+                            )
+                            msg_text = single_approval_with_link(video.get("title", ""), invite_link.invite_link)
+                        except Exception as e:
+                            logger.error(f"Failed to create VIP invite link for channel {channel_id}: {e}")
+                            channel_link = video.get("channel_link")
+                            if channel_link:
+                                msg_text = single_approval_with_link(video.get("title", ""), channel_link)
+                    else:
+                        channel_link = video.get("channel_link")
+                        if channel_link:
+                            msg_text = single_approval_with_link(video.get("title", ""), channel_link)
 
         try:
             from data.keyboards import after_payment_keyboard

@@ -52,3 +52,10 @@ async def set_video_link(video_id: str, link: str) -> None:
         lambda: sb.table("videos").update({"channel_link": link}).eq("id", video_id).execute()
     )
 
+async def set_video_channel_id(video_id: str, channel_id: int) -> None:
+    """Store a channel ID for a specific video."""
+    sb = get_supabase()
+    await run_blocking(
+        lambda: sb.table("videos").update({"channel_id": channel_id}).eq("id", video_id).execute()
+    )
+

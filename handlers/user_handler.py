@@ -42,6 +42,39 @@ async def handle_user_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         parse_mode="HTML"
     )
 
+async def send_welcome_message(chat_id: int, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Helper functional to send welcome text, images and the keyboard."""
+    import os
+    from telegram import InputMediaPhoto
+
+    # 1. Send the text first
+    await context.bot.send_message(chat_id=chat_id, text=WELCOME)
+
+    # 2. Try to send the two images (as an album/media group under the text)
+    img1 = "assets/plan1.jpg"
+    img2 = "assets/plan2.jpg"
+
+    if os.path.exists(img1) and os.path.exists(img2):
+        try:
+            await context.bot.send_media_group(
+                chat_id=chat_id,
+                media=[
+                    InputMediaPhoto(open(img1, "rb")),
+                    InputMediaPhoto(open(img2, "rb"))
+                ]
+            )
+        except Exception as e:
+            logger.error(f"Failed to send welcome images: {e}")
+
+    # 3. Send a brief call-to-action to attach the reply keyboard
+    # (Reply keyboards persist better when attached to latest message)
+    await context.bot.send_message(
+        chat_id=chat_id,
+        text="👇 အောက်ပါ ရွေးချယ်စရာများမှ တစ်ခုကို နှိပ်ပါ...",
+        reply_markup=main_menu_keyboard(),
+    )
+
+
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     if not user:
@@ -61,10 +94,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     sm = context.bot_data["session_manager"]
     await sm.reset(user.id)
 
-    await update.message.reply_text(
-        WELCOME,
-        reply_markup=main_menu_keyboard(),
-    )
+    await send_welcome_message(user.id, context)
 
 
 async def handle_buy_bundle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -107,11 +137,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await query.edit_message_reply_markup(reply_markup=None)  # strip inline buttons
         except Exception:
             pass  # message may already be gone — that's fine
-        await context.bot.send_message(
-            chat_id=user.id,
-            text=WELCOME,
-            reply_markup=main_menu_keyboard(),
-        )
+        
+        await send_welcome_message(user.id, context)
         return
 
     # ── BUY BUNDLE ──────────────────────────────────────────
