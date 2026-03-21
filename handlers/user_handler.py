@@ -154,6 +154,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         amount = video["price"]
         await sm.set(user.id, state=AWAITING_SCREENSHOT, video_id=video_id, amount=amount)
-        await query.edit_message_text(single_payment_instructions(video["title"], amount))
+        await query.edit_message_text(
+            text=single_payment_instructions(video["title"], amount),
+            reply_markup=back_to_main_keyboard()
+        )
         return
 

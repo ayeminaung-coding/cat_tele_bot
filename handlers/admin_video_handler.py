@@ -282,6 +282,7 @@ def build_addvideo_conv() -> ConversationHandler:
         fallbacks=[CommandHandler("cancel", addvideo_cancel)],
         per_chat=True,
         per_user=True,
+        allow_reentry=True,
     )
 
 
@@ -300,6 +301,7 @@ def build_setvideolink_conv() -> ConversationHandler:
         fallbacks=[CommandHandler("cancel", setvideolink_cancel_cmd)],
         per_chat=True,
         per_user=True,
+        allow_reentry=True,
     )
 
 def build_setbundletext_conv() -> ConversationHandler:
@@ -311,4 +313,5 @@ def build_setbundletext_conv() -> ConversationHandler:
         fallbacks=[CommandHandler("cancel", setbundletext_cancel)],
         per_chat=True,
         per_user=True,
+        allow_reentry=True,
     )
