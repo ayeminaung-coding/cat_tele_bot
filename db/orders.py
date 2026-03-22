@@ -75,3 +75,36 @@ async def update_order_status(
     """Update order status."""
     sb = get_supabase()
     await run_blocking(lambda: sb.table("orders").update({"status": status}).eq("id", order_id).execute())
+
+async def get_order_stats() -> dict:
+    """Fetch total orders for today and yesterday."""
+    from datetime import datetime, timezone, timedelta
+    sb = get_supabase()
+    
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    yesterday_start = today_start - timedelta(days=1)
+    
+    # Today's orders
+    res_today = await run_blocking(
+        lambda: sb.table("orders")
+        .select("id", count="exact")
+        .gte("created_at", today_start.isoformat())
+        .limit(0).execute()
+    )
+    today_count = res_today.count if res_today.count is not None else 0
+    
+    # Yesterday's orders
+    res_yesterday = await run_blocking(
+        lambda: sb.table("orders")
+        .select("id", count="exact")
+        .gte("created_at", yesterday_start.isoformat())
+        .lt("created_at", today_start.isoformat())
+        .limit(0).execute()
+    )
+    yesterday_count = res_yesterday.count if res_yesterday.count is not None else 0
+    
+    return {
+        "today": today_count,
+        "yesterday": yesterday_count
+    }

@@ -33,12 +33,18 @@ async def userstats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return
 
     from db.users import get_user_stats
+    from db.orders import get_order_stats
+    
     stats = await get_user_stats()
+    order_stats = await get_order_stats()
     
     msg = (
         "📊 <b>Bot User Statistics</b>\n\n"
         f"👥 Total Users: <b>{stats['total']}</b>\n"
-        f"🆕 Joined Today: <b>{stats['daily']}</b>"
+        f"🆕 Joined Today: <b>{stats['daily']}</b>\n\n"
+        "💳 <b>Order Statistics</b>\n\n"
+        f"✅ Today's Orders: <b>{order_stats['today']}</b>\n"
+        f"📅 Yesterday's Orders: <b>{order_stats['yesterday']}</b>"
     )
     await update.message.reply_text(msg, parse_mode="HTML")
 
