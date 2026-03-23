@@ -2,6 +2,7 @@
 handlers/user_handler.py — /start command and video selection.
 """
 import logging
+from pathlib import Path
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -42,6 +43,36 @@ async def handle_user_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         parse_mode="HTML"
     )
 
+async def send_welcome_message(chat_id: int, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Helper functional to send welcome text, images and the keyboard."""
+    from telegram import InputMediaPhoto
+
+    # 1. Try to send the two images first (as an album/media group)
+    project_root = Path(__file__).resolve().parent.parent
+    img1 = project_root / "assets" / "plan1.jpg"
+    img2 = project_root / "assets" / "plan2.jpg"
+
+    if img1.exists() and img2.exists():
+        try:
+            with img1.open("rb") as f1, img2.open("rb") as f2:
+                await context.bot.send_media_group(
+                    chat_id=chat_id,
+                    media=[
+                        InputMediaPhoto(f1),
+                        InputMediaPhoto(f2),
+                    ],
+                )
+        except Exception as e:
+            logger.error(f"Failed to send welcome images: {e}")
+
+    # 2. Send welcome text after images and attach reply keyboard.
+    await context.bot.send_message(
+        chat_id=chat_id,
+        text=WELCOME,
+        reply_markup=main_menu_keyboard(),
+    )
+
+
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     if not user:
@@ -61,10 +92,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     sm = context.bot_data["session_manager"]
     await sm.reset(user.id)
 
-    await update.message.reply_text(
-        WELCOME,
-        reply_markup=main_menu_keyboard(),
-    )
+    await send_welcome_message(user.id, context)
 
 
 async def handle_buy_bundle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -107,11 +135,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await query.edit_message_reply_markup(reply_markup=None)  # strip inline buttons
         except Exception:
             pass  # message may already be gone — that's fine
-        await context.bot.send_message(
-            chat_id=user.id,
-            text=WELCOME,
-            reply_markup=main_menu_keyboard(),
-        )
+        
+        await send_welcome_message(user.id, context)
         return
 
     # ── BUY BUNDLE ──────────────────────────────────────────
@@ -154,6 +179,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         amount = video["price"]
         await sm.set(user.id, state=AWAITING_SCREENSHOT, video_id=video_id, amount=amount)
-        await query.edit_message_text(single_payment_instructions(video["title"], amount))
+        await query.edit_message_text(
+            text=single_payment_instructions(video["title"], amount),
+            reply_markup=back_to_main_keyboard()
+        )
         return
 

@@ -10,7 +10,7 @@ def main_menu_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         [
             ["🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ် - 1000 ကျပ်"],
-            ["📦 ဇာတ်လမ်း 15ပုဒ် အစုလိုက် VIPဝင်မယ် - 5000 ကျပ်"],
+            ["📦 ဇာတ်လမ်း 15ပုဒ်စာ VIPဝင်မယ် - 5000 ကျပ်"],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -88,4 +88,14 @@ def set_video_link_keyboard(videos: List[Dict[str, Any]]) -> InlineKeyboardMarku
             InlineKeyboardButton(f"{has_link} {v['title']}", callback_data=f"setlink_select:{v['id']}")
         ])
     buttons.append([InlineKeyboardButton("❌ ပယ်ဖျက်ပြီ", callback_data="setlink_cancel")])
+    return InlineKeyboardMarkup(buttons)
+def set_video_channel_id_keyboard(videos: List[Dict[str, Any]]) -> InlineKeyboardMarkup:
+    """List of all videos for admin setchannelid selection."""
+    buttons = []
+    for v in videos:
+        has_id = "🔗" if v.get("channel_id") else "❌"
+        buttons.append([
+            InlineKeyboardButton(f"{has_id} {v['title']}", callback_data=f"setchannelid_select:{v['id']}")
+        ])
+    buttons.append([InlineKeyboardButton("❌ ပယ်ဖျက်မည်", callback_data="setchannelid_cancel")])
     return InlineKeyboardMarkup(buttons)

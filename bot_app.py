@@ -17,11 +17,12 @@ from handlers.user_handler import (
     handle_user_text,
 )
 from handlers.payment_handler import handle_screenshot
-from handlers.admin_handler import handle_admin_callback
+from handlers.admin_handler import handle_admin_callback, userstats_command
 from handlers.admin_video_handler import (
     build_addvideo_conv,
     build_setvideolink_conv,
     build_setbundletext_conv,
+    build_setchannelid_conv,
     deletevideo_start,
     handle_delete_select,
     handle_delete_confirm,
@@ -29,7 +30,7 @@ from handlers.admin_video_handler import (
 )
 from handlers.message_router import handle_admin_reply
 from handlers.error_handler import handle_error
-from utils.session import SessionManager
+from utils.session import create_session_manager
 
 
 def build_application() -> Application:
@@ -39,21 +40,15 @@ def build_application() -> Application:
         .build()
     )
 
-    app.bot_data["session_manager"] = SessionManager()
+    app.bot_data["session_manager"] = create_session_manager()
 
     # ── User-side commands ─────────────────────────────────
     app.add_handler(CommandHandler("start", start_command))
     
     # ── Text Handlers for Old Reply Keyboards ──────────────
     app.add_handler(MessageHandler(filters.Text("🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ် - 1000 ကျပ်"), handle_buy_single_text))
-    app.add_handler(MessageHandler(filters.Text("📦 ဇာတ်လမ်း 15ပုဒ် အစုလိုက် VIPဝင်မယ် - 5000 ကျပ်"), handle_buy_bundle_text))    
-    # Generic User Text Fallback (Send to Admin)
-    app.add_handler(
-        MessageHandler(
-            filters.TEXT & filters.ChatType.PRIVATE & ~filters.COMMAND,
-            handle_user_text,
-        )
-    )
+    app.add_handler(MessageHandler(filters.Text("📦 ဇာတ်လမ်း 15ပုဒ်စာ VIPဝင်မယ် - 5000 ကျပ်"), handle_buy_bundle_text))    
+
     # ── Inline button callbacks ────────────────────────────
     # Main menu selections, video selection, and back buttons
     app.add_handler(CallbackQueryHandler(handle_callback, pattern=r"^(buy:|video:|back_to_main|retry)"))
@@ -62,8 +57,10 @@ def build_application() -> Application:
     app.add_handler(CallbackQueryHandler(handle_admin_callback, pattern=r"^(approve|reject):"))
 
     # ── Admin video management ─────────────────────────────
+    app.add_handler(CommandHandler("userstats", userstats_command))
     app.add_handler(build_addvideo_conv())
     app.add_handler(build_setvideolink_conv())
+    app.add_handler(build_setchannelid_conv())
     app.add_handler(build_setbundletext_conv())
     app.add_handler(CommandHandler("deletevideo", deletevideo_start))
     app.add_handler(CallbackQueryHandler(handle_delete_select, pattern=r"^del_select:"))
@@ -84,6 +81,15 @@ def build_application() -> Application:
         MessageHandler(
             filters.Chat(settings.ADMIN_GROUP_ID) & filters.REPLY & ~filters.COMMAND,
             handle_admin_reply,
+        )
+    )
+
+    # Generic User Text Fallback (Send to Admin)
+    # MUST BE LAST so it doesn't swallow conversation state texts
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & filters.ChatType.PRIVATE & ~filters.COMMAND,
+            handle_user_text,
         )
     )
 

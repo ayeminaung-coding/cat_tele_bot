@@ -13,7 +13,8 @@ from telegram.ext import (
 )
 
 from config import settings
-from db.videos import get_all_videos, add_video, delete_video, get_video, set_video_link
+from db.videos import get_all_videos, add_video, delete_video, get_video, set_video_link, set_video_channel_id
+from db.logs import log_action
 from data.bundle_manager import set_bundle_info, get_bundle_info
 from data.messages import (
     ADMIN_ONLY,
@@ -31,11 +32,16 @@ from data.messages import (
     ASK_SETLINK_URL,
     setlink_success,
     SETLINK_CANCELLED,
+    ASK_SETCHANNELID_VIDEO,
+    ASK_SETCHANNELID_ID,
+    setchannelid_success,
+    SETCHANNELID_CANCELLED,
 )
 from data.keyboards import (
     delete_video_list_keyboard,
     delete_confirm_keyboard,
     set_video_link_keyboard,
+    set_video_channel_id_keyboard,
 )
 
 logger = logging.getLogger(__name__)
@@ -45,6 +51,7 @@ WAITING_TITLE = 0
 WAITING_PRICE = 1
 WAITING_LINK  = 2  # used by setvideolink conv
 WAITING_BUNDLE_TEXT = 3 # used by setbundletext conv
+WAITING_CHANNEL_ID = 4 # used by setchannelid conv
 
 
 # ══════════════════════════════════════════════════════════════
@@ -78,9 +85,25 @@ async def addvideo_get_price(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     price = int(text)
     title = context.user_data.pop("new_video_title", "")
+    admin_id = update.effective_user.id if update.effective_user else None
 
-    await add_video(title, price)
-    await update.message.reply_text(add_video_success(title, price))
+    try:
+        created = await add_video(title, price)
+        created_id = created.get("id") if isinstance(created, dict) else None
+        if created_id:
+            saved = await get_video(created_id)
+            if not saved:
+                raise RuntimeError("Insert did not persist in database")
+        await update.message.reply_text(
+            f"{add_video_success(title, price)}\n🆔 Video ID: <code>{created_id or 'unknown'}</code>",
+            parse_mode="HTML",
+        )
+        await log_action("add_video", admin_id=admin_id, detail=f"id={created_id} title={title} price={price}")
+    except Exception as e:
+        logger.error(f"Failed to add video: {e}", exc_info=True)
+        await update.message.reply_text(f"❌ ဒေတာဘေ့စ်သို့ သိမ်းဆည်းရာတွင် အမှားအယွင်းဖြစ်နေပါသည်။\nအမှား: {e}")
+        await log_action("add_video_error", admin_id=admin_id, detail=f"title={title} price={price} err={e}")
+        
     return ConversationHandler.END
 
 
@@ -228,14 +251,99 @@ async def setvideolink_cancel_cmd(update: Update, context: ContextTypes.DEFAULT_
 
 
 # ════════════════════════════════════════════════════════════
+#  SET CHANNEL ID FLOW  (/setchannelid)
+# ════════════════════════════════════════════════════════════
+
+async def setchannelid_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Entry: /setchannelid — shows inline list of videos."""
+    if update.effective_user.id not in settings.ADMIN_IDS:
+        await update.message.reply_text(ADMIN_ONLY)
+        return ConversationHandler.END
+
+    videos = await get_all_videos()
+    if not videos:
+        await update.message.reply_text(NO_VIDEOS_TO_DELETE)
+        return ConversationHandler.END
+
+    await update.message.reply_text(
+        ASK_SETCHANNELID_VIDEO,
+        reply_markup=set_video_channel_id_keyboard(videos),
+    )
+    return WAITING_CHANNEL_ID
+
+async def setchannelid_pick(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin tapped a video — store the ID and ask for the Channel ID."""
+    query = update.callback_query
+    await query.answer()
+
+    video_id = query.data.split(":", 1)[1]
+    video = await get_video(video_id)
+    if not video:
+        # Fallback error mapping
+        await query.edit_message_text("❓ ဗီဒီယို ရှာမတွေ့ပါ။")
+        return ConversationHandler.END
+
+    context.user_data["setchannelid_video_id"] = video_id
+    context.user_data["setchannelid_video_title"] = video["title"]
+    await query.edit_message_text(f"{ASK_SETCHANNELID_ID}\n\n({video['title']})")
+    return WAITING_CHANNEL_ID
+
+async def setchannelid_save(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin sent the Channel ID — save it to DB and confirm."""
+    channel_id_str = update.message.text.strip()
+    video_id = context.user_data.pop("setchannelid_video_id", None)
+    title = context.user_data.pop("setchannelid_video_title", "")
+
+    if not video_id:
+        await update.message.reply_text(SETCHANNELID_CANCELLED)
+        return ConversationHandler.END
+
+    try:
+        channel_id = int(channel_id_str)
+        await set_video_channel_id(video_id, channel_id)
+        await update.message.reply_text(setchannelid_success(title))
+    except ValueError:
+        await update.message.reply_text("❌ မှားယွင်းနေပါသည်။ သေချာသော Telegram Channel ID ဂဏန်း (ဥပမာ: -1001234567) ကိုသာ ပေးပို့ပါ။")
+        # Give them another chance
+        context.user_data["setchannelid_video_id"] = video_id
+        context.user_data["setchannelid_video_title"] = title
+        return WAITING_CHANNEL_ID
+    return ConversationHandler.END
+
+async def setchannelid_cancel_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin tapped cancel in the video picker."""
+    query = update.callback_query
+    await query.answer()
+    context.user_data.pop("setchannelid_video_id", None)
+    context.user_data.pop("setchannelid_video_title", None)
+    await query.edit_message_text(SETCHANNELID_CANCELLED)
+    return ConversationHandler.END
+
+async def setchannelid_cancel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin sent /cancel during the flow."""
+    context.user_data.pop("setchannelid_video_id", None)
+    context.user_data.pop("setchannelid_video_title", None)
+    await update.message.reply_text(SETCHANNELID_CANCELLED)
+    return ConversationHandler.END
+
+# ════════════════════════════════════════════════════════════
 #  SET BUNDLE TEXT FLOW  (/setbundletext)
 # ════════════════════════════════════════════════════════════
 
 async def setbundletext_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Entry: /setbundletext — asks admin to enter the new bundle info text."""
+    """Entry: /setbundletext — asks admin to enter the new bundle info text or sets it directly."""
     if update.effective_user.id not in settings.ADMIN_IDS:
         await update.message.reply_text(ADMIN_ONLY)
         return ConversationHandler.END
+
+    # If the user typed something after the command, save it directly
+    command_text = update.message.text
+    if " " in command_text:
+        new_text = command_text.split(" ", 1)[1].strip()
+        if new_text:
+            set_bundle_info(new_text)
+            await update.message.reply_text("✅ Bundle ဇာတ်လမ်းစာရင်း အသစ်ကို သိမ်းဆည်းပြီးပါပြီ။")
+            return ConversationHandler.END
 
     current_text = get_bundle_info()
     msg = (
@@ -273,6 +381,7 @@ def build_addvideo_conv() -> ConversationHandler:
         fallbacks=[CommandHandler("cancel", addvideo_cancel)],
         per_chat=True,
         per_user=True,
+        allow_reentry=True,
     )
 
 
@@ -291,6 +400,23 @@ def build_setvideolink_conv() -> ConversationHandler:
         fallbacks=[CommandHandler("cancel", setvideolink_cancel_cmd)],
         per_chat=True,
         per_user=True,
+        allow_reentry=True,
+    )
+
+def build_setchannelid_conv() -> ConversationHandler:
+    return ConversationHandler(
+        entry_points=[CommandHandler("setchannelid", setchannelid_start)],
+        states={
+            WAITING_CHANNEL_ID: [
+                CallbackQueryHandler(setchannelid_pick, pattern=r"^setchannelid_select:"),
+                CallbackQueryHandler(setchannelid_cancel_cb, pattern=r"^setchannelid_cancel$"),
+                MessageHandler(filters.TEXT & ~filters.COMMAND, setchannelid_save),
+            ],
+        },
+        fallbacks=[CommandHandler("cancel", setchannelid_cancel_cmd)],
+        per_chat=True,
+        per_user=True,
+        allow_reentry=True,
     )
 
 def build_setbundletext_conv() -> ConversationHandler:
@@ -302,4 +428,5 @@ def build_setbundletext_conv() -> ConversationHandler:
         fallbacks=[CommandHandler("cancel", setbundletext_cancel)],
         per_chat=True,
         per_user=True,
+        allow_reentry=True,
     )

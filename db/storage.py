@@ -5,6 +5,7 @@ import uuid
 import logging
 from db.client import get_supabase
 from config import settings
+from utils.db_async import run_blocking
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +35,15 @@ async def upload_screenshot(
 
     # ── Upload ──────────────────────────────────────────────
     sb = get_supabase()
-    sb.storage.from_(BUCKET).upload(
-        path=filename,
-        file=file_bytes,
-        file_options={"content-type": mime_type},
+    await run_blocking(
+        lambda: sb.storage.from_(BUCKET).upload(
+            path=filename,
+            file=file_bytes,
+            file_options={"content-type": mime_type},
+        )
     )
     logger.info(f"Uploaded screenshot: {filename}")
 
     # ── Return signed URL (24 h = 86400 s) ─────────────────
-    result = sb.storage.from_(BUCKET).create_signed_url(filename, expires_in=86400)
+    result = await run_blocking(lambda: sb.storage.from_(BUCKET).create_signed_url(filename, expires_in=86400))
     return result["signedURL"]

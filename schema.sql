@@ -3,6 +3,10 @@
 -- Run this in Supabase SQL Editor (Dashboard → SQL Editor)
 -- ============================================================
 
+-- ⚠️ PRODUCTION MIGRATION (Run this line if updating an existing database):
+-- ALTER TABLE videos ADD COLUMN IF NOT EXISTS channel_id BIGINT;
+-- ============================================================
+
 -- Drop old tables if they exist (Migration)
 DROP TABLE IF EXISTS logs CASCADE;
 DROP TABLE IF EXISTS payments CASCADE;
@@ -22,12 +26,14 @@ CREATE TABLE users (
 
 -- ── Videos ───────────────────────────────────────────────────
 CREATE TABLE videos (
-    id          VARCHAR PRIMARY KEY,     -- e.g., 'vid_01'
-    title       TEXT NOT NULL,
-    status      TEXT NOT NULL DEFAULT 'available'
-                    CHECK (status IN ('available', 'unavailable')),
-    price       INTEGER NOT NULL DEFAULT 1000,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id           VARCHAR PRIMARY KEY,     -- e.g., 'vid_01'
+    title        TEXT NOT NULL,
+    status       TEXT NOT NULL DEFAULT 'available'
+                     CHECK (status IN ('available', 'unavailable')),
+    price        INTEGER NOT NULL DEFAULT 1000,
+    channel_link TEXT,
+    channel_id   BIGINT,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ── Orders ───────────────────────────────────────────────────

@@ -54,9 +54,28 @@ ngrok http 8000
 python -m uvicorn main:app --reload --port 8000
 ```
 
-### 6. Deploy to production
+### 6. Deploy to production (Google Cloud Run)
+
+Since the bot uses background queues to process webhooks concurrently, **Cloud Run must be configured with "CPU always allocated" (`--no-cpu-throttling`)**. If CPU is throttled after the webhook returns, the background tasks will freeze.
+
 ```bash
-# Railway / Render / Fly.io
+# 1. Build and deploy to Cloud Run
+gcloud run deploy telegram-vip-bot \
+  --source . \
+  --allow-unauthenticated \
+  --cpu 1 \
+  --memory 512Mi \
+  --no-cpu-throttling \
+  --min-instances 1 \
+  --max-instances 10
+
+# 2. Set all Environment Variables in the Cloud Console
+# Make sure to set REDIS_URL if you are scaling past 1 instance
+# Make sure to grab the newly generated Service URL and update WEBHOOK_URL!
+```
+
+### 7. Other Platforms (Railway / Render / Fly.io)
+```bash
 # Set all environment variables in the platform dashboard
 # Start command:
 uvicorn main:app --host 0.0.0.0 --port $PORT
@@ -115,6 +134,15 @@ telegram_vip_bot/
 | `PORT` | ❌ | Server port (default: 8000) |
 | `USE_UNIQUE_AMOUNT` | ❌ | Unique amount offset (default: true) |
 | `MAX_FILE_SIZE` | ❌ | Max screenshot size bytes (default: 5MB) |
+| `REDIS_URL` | ❌ | Redis connection URL for shared session state (recommended in production) |
+| `UPDATE_WORKERS` | ❌ | Background workers for webhook update processing (default: 8) |
+| `UPDATE_QUEUE_SIZE` | ❌ | Max queued webhook updates before returning 503 (default: 1000) |
+
+### Production tuning notes
+
+- Use a stable domain for `WEBHOOK_URL` (avoid temporary ngrok URLs in production).
+- Set `REDIS_URL` when running multiple app instances/workers.
+- Start with `UPDATE_WORKERS=8` and `UPDATE_QUEUE_SIZE=1000`, then tune using real traffic metrics.
 
 ---
 
@@ -134,10 +162,23 @@ telegram_vip_bot/
 
 ---
 
-## VIP Plans (edit in `data/plans.py`)
+## Commands List
 
-| Plan | Price | Duration |
-|---|---|---|
-| တစ်လ (1 Month) | 5,000 MMK | 30 days |
-| သုံးလ (3 Months) | 12,000 MMK | 90 days |
-| တစ်သက်တာ (Lifetime) | 30,000 MMK | Forever |
+### 👤 User Commands
+| Command | Description |
+|---|---|
+| `/start` | Start the bot, register the user, and show the main purchase menu. |
+| *(Any Text)* | If a user types text instead of clicking a button, it is forwarded to the Admin Group as a **Support Ticket**. |
+
+### 🛠️ Admin Commands (Must be in `ADMIN_IDS`)
+| Command | Description |
+|---|---|
+| `/addvideo` | Start an interactive flow to add a new video to the single-purchase list. Asks for Title, then Price. |
+| `/deletevideo` | Open an inline list of all currently available videos to select and delete them from the database. |
+| `/setvideolink` | Set the target Telegram invite/channel link for a specific video. When users buy this video, they receive this link automatically upon approval. |
+| `/setbundletext` | Update the text displayed when a user clicks the "Bundle" purchase option. |
+| `/userstats` | View a quick statistical report of the total number of users and users who joined today. |
+| `/cancel` | Cancel any ongoing admin flow (adding, deleting, link setting) without saving. |
+| *(Reply to Support)* | If an admin **Replies** to a Support Ticket or Payment inside the Admin Group with Text, Photo, or Video, the bot will secretly copy and forward that reply directly to the User's DM! |
+
+---
