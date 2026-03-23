@@ -82,6 +82,10 @@ def bundle_approval_message(invite_link: str) -> str:
         f"{invite_link}\n\n"
         f"ဝယ်ယူအားပေးမှုအတွက် ကျေးဇူးတင်ပါတယ်ရှင့် ❤️‍🔥💞🙏 \n \n"
         f"⚠️ မှတ်ချက် — ‌Channel ဝင်ရောက်ရာတွင် အဆင်မပြေဖြစ်ပါက ဆက်သွယ်ရန် - @whitecatadmin..\n "
+        f"‌Channel ဝင်ရောက်ရာတွင် join ခလုတ်နှိပ်ပီပါက လင့် invalid ဖြစ်သွားမှာပါ ..\n "
+        f"✅ ဇာတ်ကားနာမည်ကို search မှာ ရိုက်ရှာပြီး ဝင်ရောက်ကြည့်ပေးပါနော် "
+        f"🙅 Channel ဝင်ရောက်ရာတွင် အဆင်မပြေဖြစ်ပါက ဆက်သွယ်ရန် - @whitecatadmin..\n "
+
     )
 
 REJECTION_MESSAGE = (
