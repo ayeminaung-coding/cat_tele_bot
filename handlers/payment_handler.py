@@ -16,6 +16,7 @@ from data.messages import (
     NOT_IN_PAYMENT_FLOW,
     UPLOAD_FAILED,
 )
+from data.keyboards import start_inline_keyboard
 from utils.session import AWAITING_SCREENSHOT
 from handlers.admin_handler import forward_to_admin
 
@@ -30,7 +31,10 @@ async def handle_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     # ── Guard: must be in payment flow ─────────────────────
     if session["state"] != AWAITING_SCREENSHOT:
-        await update.message.reply_text(NOT_IN_PAYMENT_FLOW)
+        await update.message.reply_text(
+            NOT_IN_PAYMENT_FLOW,
+            reply_markup=start_inline_keyboard()
+        )
         return
 
     order_type = session["order_type"] # 'single' or 'bundle'

@@ -21,7 +21,7 @@ def start_inline_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ် - 1000 ကျပ်", callback_data="main_buy_single")],
-            [InlineKeyboardButton("📦 ဇာတ်လမ်း 15ပုဒ် အစုလိုက် VIPဝင်မယ် - 5000 ကျပ်", callback_data="main_buy_bundle")],
+            [InlineKeyboardButton("📦 ဇာတ်လမ်း 15ပုဒ်  VIPဝင်မယ် - 5000 ကျပ်", callback_data="main_buy_bundle")],
         ]
     )
 
