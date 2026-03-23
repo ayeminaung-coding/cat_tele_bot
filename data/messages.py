@@ -5,14 +5,14 @@ from config import settings
 
 WELCOME = (
     "မင်္ဂလာပါ! White Cat Channelမှကြိုဆိုပါတယ်! 🎬\n\n"
-    "VIP တရုတ်animation ဇာတ်ကားများကို ဝယ်ယူကြည့်ရှုနိုင်ပါပြီ။\n"
-    "အောက်ပါ ရွေးချယ်စရာများမှ တစ်ခုကို နှိပ်ပါ။"
+    "VIP တရုတ် animation ဇာတ်ကားများကို ဝယ်ယူကြည့်ရှုနိုင်ပါပြီ။\n"
+    "အောက်ပါ ရွေးချယ်စရာများမှ တစ်ခုကို နှိပ်ပါ...👇"
 )
 
 BANNED = (
     "⛔ အကောင့်ကို ပိတ်ဆို့ထားသောကြောင့်\n"
     "ဝန်ဆောင်မှုကို ရယူ၍မရနိုင်ပါ။\n"
-    "Admin ထံ ဆက်သွယ်ပါ။ @whitecatadmin"
+    "Admin ထံ ဆက်သွယ်ပါ @whitecatadmin"
 )
 
 # ── SINGLE VIDEO FLOW ───────────────────────────────────────────────────────
@@ -45,7 +45,7 @@ from data.bundle_manager import get_bundle_info
 
 def bundle_payment_instructions(amount: int) -> str:
     return (
-        f"💳 ငွေပေးချေနည်း \n (KBZPay/Wave Pay နှစ်ခုလုံး အောက်က နံပါတ်ကို လွှဲပေးပါနော်..)\n\n"
+        f"💳 ငွေပေးချေနည်း \n  📌(KBZPay/Wave Pay နှစ်ခုလုံး အောက်က နံပါတ်ကို လွှဲပေးပါနော်..)\n\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
         f"📦 အမျိုးအစား : ၁၅ ပုဒ် VIP ဝင်မည်\n"
         f"💰 စျေးနှုန်း  : {amount:,} ကျပ်\n\n"
@@ -72,14 +72,20 @@ def approval_message() -> str:
     return (
         f"🎉 ငွေပေးချေမှု အောင်မြင်ပါသည်။\n\n"
         f"Admin မှ သင်ဝယ်ယူထားသော VIP channelကို တစ်နာရီအတွင်း ပေးပို့ပေးပါမယ်နော် 🎬"
+        f"⚠️ မှတ်ချက် — ‌Channel ဝင်ရောက်ရာတွင် အဆင်မပြေဖြစ်ပါက ဆက်သွယ်ရန် - @whitecatadmin..\n "
     )
 
 def bundle_approval_message(invite_link: str) -> str:
     return (
         f"🎉 ငွေပေးချေမှု အောင်မြင်ပါသည်။\n\n"
-        f"အောက်ပါ လင့်မှတဆင့် VIP Channel သို့ ဝင်ရောက်နိုင်ပါပြီ👇\n"
+        f"အောက်ပါ လင့်မှတဆင့် VIP Channel သို့ ဝင်ရောက်နိုင်ပါပြီ (တစ်ယောက်ပဲဝင်လို့ရတယ်နော်)👇\n"
         f"{invite_link}\n\n"
-        f"⚠️ မှတ်ချက်။ ။ အပေါ်က လင့်သည် ၁ ယောက်သာ ဝင်ခွင့်ရှိပြီး၊ ဝင်ပြီးသည်နှင့် အလိုအလျောက် ပျက်သွားမည်ဖြစ်သည်"
+        f"ဝယ်ယူအားပေးမှုအတွက် ကျေးဇူးတင်ပါတယ်ရှင့် ❤️‍🔥💞🙏 \n \n"
+        f"⚠️ မှတ်ချက် — ‌Channel ဝင်ရောက်ရာတွင် အဆင်မပြေဖြစ်ပါက ဆက်သွယ်ရန် - @whitecatadmin..\n "
+        f"‌Channel ဝင်ရောက်ရာတွင် join ခလုတ်နှိပ်ပီပါက လင့် invalid ဖြစ်သွားမှာပါ ..\n "
+        f"✅ ဇာတ်ကားနာမည်ကို search မှာ ရိုက်ရှာပြီး ဝင်ရောက်ကြည့်ပေးပါနော် "
+        f"🙅 Channel ဝင်ရောက်ရာတွင် အဆင်မပြေဖြစ်ပါက ဆက်သွယ်ရန် - @whitecatadmin..\n "
+
     )
 
 REJECTION_MESSAGE = (
@@ -102,7 +108,9 @@ def admin_caption(
     order_id: str,
     video_title: str | None = None
 ) -> str:
-    uname = f"@{username}" if username else "မရှိ"
+    # Use HTML markdown linking so clicking the name goes directly to their DM
+    profile_link = f"<a href='tg://user?id={user_id}'>{first_name}</a>"
+    uname = f"@{username}" if username else "(username မရှိ)"
     
     if order_type == "single":
         item_text = f"🎬 ဇာတ်ကား တစ်ကား : {video_title}"
@@ -112,11 +120,11 @@ def admin_caption(
     return (
         f"💰 ငွေပေးချေမှု တင်ပြချက်\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
-        f"👤 အမည်  : {first_name} ({uname})\n"
-        f"🆔 User ID  : {user_id}\n"
+        f"👤 အမည်  : {profile_link} ({uname})\n"
+        f"🆔 User ID  : <code>{user_id}</code>\n"
         f"{item_text}\n"
         f"💵 ပမာဏ  : {amount:,} ကျပ်\n"
-        f"🔑 Order ID  : {order_id}\n"
+        f"🔑 Order ID  : <code>{order_id}</code>\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
         f"⬇️ အောက်မှ ဆုံးဖြတ်ချက်ချပါ:"
     )
@@ -138,8 +146,8 @@ INVALID_FILE_TYPE = (
 
 
 NOT_IN_PAYMENT_FLOW = (
-    "ℹ️ ငွေပေးချေမှု မစတင်ရသေးပါ။\n"
-    "/start ကို နှိပ်ပြီး ရွေးချယ်မှုအသစ် ပြုလုပ်ပါ။"
+    "ဘယ်အမျိုးအစားကို ဝယ်ယူမှာလဲဆိုတာ ပြောပြပေးပါရှင့်\n"
+    "အောက်က Button တွေထဲက တစ်ခုကို နှိပ်ပြီး ရွေးချယ်ပေးပါ။"
 )
 
 GENERIC_ERROR = (
@@ -216,6 +224,17 @@ def setlink_success(title: str) -> str:
 
 SETLINK_CANCELLED = "❌ Link သတ်သွင်းခြင်း ပယ်ဖျက်ပြီ။"
 
+ASK_SETCHANNELID_VIDEO = "🆔 Channel ID ထည့်သွင်းမည့် ဇာတ်ကားကို ရွေးချယ်ပါ:"
+ASK_SETCHANNELID_ID = (
+    "📨 Telegram Channel ID (-100... ဖြင့်စသော ဂဏန်းများ) ကို ပေးပို့ပါ:\n"
+    "(လုပ်ငန်းစဥ်ကို ရပ်တန့်ရန် /cancel ကိုနှိပ်ပါ။)"
+)
+
+def setchannelid_success(title: str) -> str:
+    return f"✅ '{title}' အတွက် Channel ID သိမ်းပြီ!"
+
+SETCHANNELID_CANCELLED = "❌ Channel ID သတ်မှတ်ခြင်း ပယ်ဖျက်ပြီ။"
+
 
 # ── SINGLE VIDEO APPROVAL WITH LINK ────────────────────────────────────────
 
@@ -223,8 +242,12 @@ def single_approval_with_link(title: str, link: str) -> str:
     return (
         f"🎉 ငွေပေးချေမှု အောင်မြင်ပါတယ်..\n\n"
         f"🎬 ဇာတ်ကားအမည် : {title}\n\n"
-        f"🔗 အောက်ကြည့်အတွက် လင့်ခ်ကို အောက်ပါ:\n"
+        f"🔗 ဇာာတ်ကားကြည့်ရန်အတွက် အောက်ပါ လင့်ခ်ကို နှိပ်ပါ:\n"
         f"{link}\n\n"
-        f"⚠️ မှတ်ချက် — ‌admi‌n မှ တစ်နာရီအတွင်း approve လုပ်ပေးပါမယ်နော်..\n "
-        f"ခန လောက် စောင့်ပေးပါနော် .. \n ကျေးဇူးတင်ပါတယ်ရှင့် 🙏"
+        f" 📌‌admi‌n မှ တစ်နာရီအတွင်း approve လုပ်ပေးပါမယ်နော်..\n "
+        f"ခန လောက် စောင့်ပေးပါနော် .. \n"
+        f"ဝယ်ယူအားပေးမှုအတွက် ကျေးဇူးတင်ပါတယ်ရှင့် ❤️‍🔥💞🙏 \n \n "
+        f"⚠️ မှတ်ချက် — ‌Channel ဝင်ရောက်ရာတွင် join ခလုတ်နှိပ်ပီပါက လင့် invalid ဖြစ်သွားမှာပါ ..\n "
+        f"✅ ဇာတ်ကားနာမည်ကို search မှာ ရိုက်ရှာပြီး ဝင်ရောက်ကြည့်ပေးပါနော် "
+        f"🙅 Channel ဝင်ရောက်ရာတွင် အဆင်မပြေဖြစ်ပါက ဆက်သွယ်ရန် - @whitecatadmin..\n "
     )
