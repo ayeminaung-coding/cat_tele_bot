@@ -9,21 +9,45 @@ def main_menu_keyboard() -> ReplyKeyboardMarkup:
     """Persistent reply keyboard shown on /start and after returning to main menu."""
     return ReplyKeyboardMarkup(
         [
-            ["🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ် - 1000 ကျပ်"],
-            ["📦 ဇာတ်လမ်း 15ပုဒ် အစုလိုက် VIPဝင်မယ် - 5000 ကျပ်"],
+            ["အစကို ပြန်သွားမယ်"],
         ],
         resize_keyboard=True,
         is_persistent=True,
     )
 
 
-def single_video_selection_keyboard(videos: List[Dict[str, Any]]) -> InlineKeyboardMarkup:
-    """Dynamically build list of videos from the DB"""
+def start_inline_keyboard() -> InlineKeyboardMarkup:
+    """Inline keyboard shown under the welcome text."""
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ် - 1000 ကျပ်", callback_data="main_buy_single")],
+            [InlineKeyboardButton("📦 ဇာတ်လမ်း 15ပုဒ် အစုလိုက် VIPဝင်မယ် - 5000 ကျပ်", callback_data="main_buy_bundle")],
+        ]
+    )
+
+
+def single_video_selection_keyboard(videos: List[Dict[str, Any]], page: int = 0, page_size: int = 5) -> InlineKeyboardMarkup:
+    """Dynamically build list of videos from the DB with pagination."""
     buttons = []
-    for vid in videos:
+    
+    start_idx = page * page_size
+    end_idx = start_idx + page_size
+    current_videos = videos[start_idx:end_idx]
+
+    for vid in current_videos:
         icon = "✅" if vid["status"] == "available" else "❌"
         text = f"{icon} {vid['title']}"
         buttons.append([InlineKeyboardButton(text, callback_data=f"video:{vid['id']}")])
+    
+    # Pagination buttons
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append(InlineKeyboardButton("⬅️ ရှေ့သို့", callback_data=f"page:{page-1}"))
+    if end_idx < len(videos):
+        nav_buttons.append(InlineKeyboardButton("နောက်သို့ ➡️", callback_data=f"page:{page+1}"))
+        
+    if nav_buttons:
+        buttons.append(nav_buttons)
     
     # Back button
     buttons.append([InlineKeyboardButton("🔙 ပြန်ထွက်မည်", callback_data="back_to_main")])

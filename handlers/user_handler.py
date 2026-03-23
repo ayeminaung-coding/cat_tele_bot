@@ -13,7 +13,7 @@ from data.messages import (
     SINGLE_VIDEO_HEADER, video_unavailable,
     single_payment_instructions, bundle_payment_instructions,
 )
-from data.keyboards import main_menu_keyboard, single_video_selection_keyboard, back_to_main_keyboard, buy_bundle_confirm_keyboard
+from data.keyboards import main_menu_keyboard, start_inline_keyboard, single_video_selection_keyboard, back_to_main_keyboard, buy_bundle_confirm_keyboard
 from utils.session import IDLE, SELECTING_VIDEO, AWAITING_SCREENSHOT
 
 logger = logging.getLogger(__name__)
@@ -62,8 +62,12 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await sm.reset(user.id)
 
     await update.message.reply_text(
-        WELCOME,
+        "👋 မင်္ဂလာပါ",
         reply_markup=main_menu_keyboard(),
+    )
+    await update.message.reply_text(
+        WELCOME,
+        reply_markup=start_inline_keyboard(),
     )
 
 
@@ -101,8 +105,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     # Return to main menu
     if data == "back_to_main" or data == "retry":
         await sm.reset(user.id)
-        # ReplyKeyboardMarkup can't be attached via edit_message_text.
-        # Strategy: remove the inline keyboard from the old message, then send a fresh welcome.
         try:
             await query.edit_message_reply_markup(reply_markup=None)  # strip inline buttons
         except Exception:
@@ -110,12 +112,20 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await context.bot.send_message(
             chat_id=user.id,
             text=WELCOME,
-            reply_markup=main_menu_keyboard(),
+            reply_markup=start_inline_keyboard(),
         )
         return
 
     # ── BUY BUNDLE ──────────────────────────────────────────
-    if data == "buy:bundle":
+    if data == "main_buy_bundle" or data == "buy:bundle":
+        if data == "main_buy_bundle":
+            bundle_text = get_bundle_info()
+            await query.edit_message_text(
+                bundle_text,
+                reply_markup=buy_bundle_confirm_keyboard()
+            )
+            return
+            
         amount = 5000
         await sm.set(user.id, state=AWAITING_SCREENSHOT, order_type="bundle", amount=amount)
         
@@ -126,12 +136,26 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
 
     # ── BUY SINGLE ──────────────────────────────────────────
-    if data == "buy:single":
+    if data == "main_buy_single" or data == "buy:single":
         await sm.set(user.id, state=SELECTING_VIDEO, order_type="single")
         videos = await get_all_videos()
         await query.edit_message_text(
             SINGLE_VIDEO_HEADER,
-            reply_markup=single_video_selection_keyboard(videos)
+            reply_markup=single_video_selection_keyboard(videos, page=0)
+        )
+        return
+
+    # ── PAGINATION ──────────────────────────────────────────
+    if data.startswith("page:"):
+        session = await sm.get(user.id)
+        if session["state"] != SELECTING_VIDEO:
+            return
+            
+        page = int(data.split(":")[1])
+        videos = await get_all_videos()
+        await query.edit_message_text(
+            SINGLE_VIDEO_HEADER,
+            reply_markup=single_video_selection_keyboard(videos, page=page)
         )
         return
 

@@ -12,8 +12,6 @@ from config import settings
 from handlers.user_handler import (
     start_command,
     handle_callback,
-    handle_buy_single_text,
-    handle_buy_bundle_text,
     handle_user_text,
 )
 from handlers.payment_handler import handle_screenshot
@@ -45,8 +43,7 @@ def build_application() -> Application:
     app.add_handler(CommandHandler("start", start_command))
     
     # ── Text Handlers for Old Reply Keyboards ──────────────
-    app.add_handler(MessageHandler(filters.Text("🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ် - 1000 ကျပ်"), handle_buy_single_text))
-    app.add_handler(MessageHandler(filters.Text("📦 ဇာတ်လမ်း 15ပုဒ် အစုလိုက် VIPဝင်မယ် - 5000 ကျပ်"), handle_buy_bundle_text))    
+    app.add_handler(MessageHandler(filters.Text("အစကို ပြန်သွားမယ်"), start_command))   
     # Generic User Text Fallback (Send to Admin)
     app.add_handler(
         MessageHandler(
@@ -56,7 +53,7 @@ def build_application() -> Application:
     )
     # ── Inline button callbacks ────────────────────────────
     # Main menu selections, video selection, and back buttons
-    app.add_handler(CallbackQueryHandler(handle_callback, pattern=r"^(buy:|video:|back_to_main|retry)"))
+    app.add_handler(CallbackQueryHandler(handle_callback, pattern=r"^(main_|buy:|video:|page:|back_to_main|retry)"))
     
     # ── Admin approve/reject (prefix: "approve:" / "reject:")
     app.add_handler(CallbackQueryHandler(handle_admin_callback, pattern=r"^(approve|reject):"))
