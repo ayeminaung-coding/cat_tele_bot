@@ -44,7 +44,6 @@ def build_application() -> Application:
     app.add_handler(CommandHandler("start", start_command))
     
     # ── Text Handlers for Old Reply Keyboards ──────────────
-<<<<<<< HEAD
     app.add_handler(MessageHandler(filters.Text("အစကို ပြန်သွားမယ်"), start_command))   
     # Generic User Text Fallback (Send to Admin)
     app.add_handler(
@@ -53,11 +52,6 @@ def build_application() -> Application:
             handle_user_text,
         )
     )
-=======
-    app.add_handler(MessageHandler(filters.Text("🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ် - 1000 ကျပ်"), handle_buy_single_text))
-    app.add_handler(MessageHandler(filters.Text("📦 ဇာတ်လမ်း 15ပုဒ်စာ VIPဝင်မယ် - 5000 ကျပ်"), handle_buy_bundle_text))    
-
->>>>>>> 9a72a5f6bba47525aa7039e72dcef46ba5f21519
     # ── Inline button callbacks ────────────────────────────
     # Main menu selections, video selection, and back buttons
     app.add_handler(CallbackQueryHandler(handle_callback, pattern=r"^(main_|buy:|video:|page:|back_to_main|retry)"))

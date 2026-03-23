@@ -9,12 +9,7 @@ def main_menu_keyboard() -> ReplyKeyboardMarkup:
     """Persistent reply keyboard shown on /start and after returning to main menu."""
     return ReplyKeyboardMarkup(
         [
-<<<<<<< HEAD
             ["အစကို ပြန်သွားမယ်"],
-=======
-            ["🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ် - 1000 ကျပ်"],
-            ["📦 ဇာတ်လမ်း 15ပုဒ်စာ VIPဝင်မယ် - 5000 ကျပ်"],
->>>>>>> 9a72a5f6bba47525aa7039e72dcef46ba5f21519
         ],
         resize_keyboard=True,
         is_persistent=True,

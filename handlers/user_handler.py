@@ -44,7 +44,7 @@ async def handle_user_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     )
 
 async def send_welcome_message(chat_id: int, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Helper functional to send welcome text, images and the keyboard."""
+    """Helper functional to send welcome images."""
     from telegram import InputMediaPhoto
 
     # 1. Try to send the two images first (as an album/media group)
@@ -64,13 +64,6 @@ async def send_welcome_message(chat_id: int, context: ContextTypes.DEFAULT_TYPE)
                 )
         except Exception as e:
             logger.error(f"Failed to send welcome images: {e}")
-
-    # 2. Send welcome text after images and attach reply keyboard.
-    await context.bot.send_message(
-        chat_id=chat_id,
-        text=WELCOME,
-        reply_markup=main_menu_keyboard(),
-    )
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -92,18 +85,20 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     sm = context.bot_data["session_manager"]
     await sm.reset(user.id)
 
-<<<<<<< HEAD
+    # 1. Send short greeting to attach the persistent reply keyboard
     await update.message.reply_text(
         "👋 မင်္ဂလာပါ",
         reply_markup=main_menu_keyboard(),
     )
+    
+    # 2. Send the plan images
+    await send_welcome_message(user.id, context)
+    
+    # 3. Send the main welcome text with inline selection buttons
     await update.message.reply_text(
         WELCOME,
         reply_markup=start_inline_keyboard(),
     )
-=======
-    await send_welcome_message(user.id, context)
->>>>>>> 9a72a5f6bba47525aa7039e72dcef46ba5f21519
 
 
 async def handle_buy_bundle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -144,16 +139,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await query.edit_message_reply_markup(reply_markup=None)  # strip inline buttons
         except Exception:
             pass  # message may already be gone — that's fine
-<<<<<<< HEAD
         await context.bot.send_message(
             chat_id=user.id,
             text=WELCOME,
             reply_markup=start_inline_keyboard(),
         )
-=======
         
-        await send_welcome_message(user.id, context)
->>>>>>> 9a72a5f6bba47525aa7039e72dcef46ba5f21519
+        # await send_welcome_message(user.id, context)
         return
 
     # ── BUY BUNDLE ──────────────────────────────────────────
