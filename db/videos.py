@@ -10,7 +10,7 @@ from utils.db_async import run_blocking
 async def get_all_videos() -> List[Dict[str, Any]]:
     """Fetch all videos, ordered by created_at."""
     sb = get_supabase()
-    result = await run_blocking(lambda: sb.table("videos").select("*").order("created_at").execute())
+    result = await run_blocking(lambda: sb.table("videos").select("*").order("created_at", desc=True).execute())
     return result.data
 
 
