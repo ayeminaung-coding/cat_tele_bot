@@ -12,6 +12,7 @@ from config import settings
 from handlers.user_handler import (
     start_command,
     handle_callback,
+    handle_stale_callback,
     handle_user_text,
 )
 from handlers.payment_handler import handle_screenshot
@@ -63,6 +64,9 @@ def build_application() -> Application:
     app.add_handler(CallbackQueryHandler(handle_delete_select, pattern=r"^del_select:"))
     app.add_handler(CallbackQueryHandler(handle_delete_confirm, pattern=r"^del_confirm:"))
     app.add_handler(CallbackQueryHandler(handle_delete_cancel, pattern=r"^del_cancel$"))
+
+    # Fallback for legacy/outdated inline callback payloads from old messages
+    app.add_handler(CallbackQueryHandler(handle_stale_callback))
 
     # ── Screenshot / document upload (private chat only) ───
     app.add_handler(

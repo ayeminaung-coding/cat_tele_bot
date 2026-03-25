@@ -24,6 +24,40 @@ logger = logging.getLogger(__name__)
 
 from config import settings
 
+
+LEGACY_CALLBACK_ALIASES = {
+    "buy_single": "main_buy_single",
+    "single": "main_buy_single",
+    "buy_bundle": "main_buy_bundle",
+    "bundle": "main_buy_bundle",
+    "main_menu": "back_to_main",
+    "back": "back_to_main",
+}
+
+
+def normalize_callback_data(data: str | None) -> str:
+    """Normalize old callback payloads to current callback format."""
+    if not data:
+        return ""
+
+    normalized = data.strip()
+    if not normalized:
+        return ""
+
+    if normalized in LEGACY_CALLBACK_ALIASES:
+        return LEGACY_CALLBACK_ALIASES[normalized]
+
+    if normalized.startswith("video_"):
+        return f"video:{normalized.split('_', 1)[1]}"
+
+    if normalized.startswith("page_"):
+        return f"page:{normalized.split('_', 1)[1]}"
+
+    if normalized.startswith("buy_"):
+        return f"buy:{normalized.split('_', 1)[1]}"
+
+    return normalized
+
 async def handle_user_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Fallback handler for generic text messages. Forwards them to the admin group."""
     # Check rate limit first
@@ -144,7 +178,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     user = update.effective_user
     sm = context.bot_data["session_manager"]
-    data = query.data
+    data = normalize_callback_data(query.data)
 
     # Return to main menu
     if data == "back_to_main" or data == "retry":
@@ -229,4 +263,28 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             reply_markup=back_to_main_keyboard()
         )
         return
+
+
+async def handle_stale_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Fallback for outdated inline buttons still visible in user chat history."""
+    query = update.callback_query
+    user = update.effective_user
+    if not query or not user:
+        return
+
+    await query.answer("ခလုတ်ဟောင်းဖြစ်နေပါတယ်။ အသစ်ပြန်ဖွင့်ပေးလိုက်ပါပြီ။", show_alert=True)
+
+    sm = context.bot_data["session_manager"]
+    await sm.reset(user.id)
+
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+
+    await context.bot.send_message(
+        chat_id=user.id,
+        text=WELCOME,
+        reply_markup=start_inline_keyboard(),
+    )
 
