@@ -109,15 +109,23 @@ async def handle_admin_callback(update: Update, context: ContextTypes.DEFAULT_TY
         msg_text = approval_message()
 
         if order_type == "bundle":
+            paid_link = (settings.VIP_INVITE_LINK_PAID or "").strip()
+            invite_url = ""
             try:
                 invite_link = await context.bot.create_chat_invite_link(
                     chat_id=settings.VIP_CHANNEL_ID,
                     member_limit=1,
                     name=f"Order {order_id}"
                 )
-                msg_text = bundle_approval_message(invite_link.invite_link)
+                invite_url = invite_link.invite_link
             except Exception as e:
                 logger.error(f"Failed to create VIP invite link: {e}")
+
+            # Always try to include the env channel link; include invite link when generated.
+            if invite_url or paid_link:
+                msg_text = bundle_approval_message(invite_url, paid_link)
+            else:
+                logger.warning("Bundle approval has no links: both invite link generation and VIP_INVITE_LINK_PAID are unavailable")
 
         elif order_type == "single":
             # Auto-send the stored channel link if one exists for this video
@@ -127,6 +135,10 @@ async def handle_admin_callback(update: Update, context: ContextTypes.DEFAULT_TY
                 video = await get_video(video_id)
                 if video:
                     channel_id = video.get("channel_id")
+                    video_title = video.get("title", "")
+                    channel_link = (video.get("channel_link") or "").strip()
+                    invite_url = ""
+
                     if channel_id:
                         try:
                             invite_link = await context.bot.create_chat_invite_link(
@@ -134,16 +146,17 @@ async def handle_admin_callback(update: Update, context: ContextTypes.DEFAULT_TY
                                 member_limit=1,
                                 name=f"Order {order_id}"
                             )
-                            msg_text = single_approval_with_link(video.get("title", ""), invite_link.invite_link)
+                            invite_url = invite_link.invite_link
                         except Exception as e:
                             logger.error(f"Failed to create VIP invite link for channel {channel_id}: {e}")
-                            channel_link = video.get("channel_link")
-                            if channel_link:
-                                msg_text = single_approval_with_link(video.get("title", ""), channel_link)
-                    else:
-                        channel_link = video.get("channel_link")
-                        if channel_link:
-                            msg_text = single_approval_with_link(video.get("title", ""), channel_link)
+
+                    # Always include both links when available: generated invite link + DB channel link.
+                    if invite_url and channel_link:
+                        msg_text = single_approval_with_link(video_title, invite_url, channel_link)
+                    elif invite_url:
+                        msg_text = single_approval_with_link(video_title, invite_url, "")
+                    elif channel_link:
+                        msg_text = single_approval_with_link(video_title, "", channel_link)
 
         try:
             from data.keyboards import after_payment_keyboard

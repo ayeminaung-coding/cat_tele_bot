@@ -42,16 +42,10 @@ def build_application() -> Application:
 
     # ── User-side commands ─────────────────────────────────
     app.add_handler(CommandHandler("start", start_command))
-    
+
     # ── Text Handlers for Old Reply Keyboards ──────────────
-    app.add_handler(MessageHandler(filters.Text("အစကို ပြန်သွားမယ်"), start_command))   
-    # Generic User Text Fallback (Send to Admin)
-    app.add_handler(
-        MessageHandler(
-            filters.TEXT & filters.ChatType.PRIVATE & ~filters.COMMAND,
-            handle_user_text,
-        )
-    )
+    app.add_handler(MessageHandler(filters.Text("အစကို ပြန်သွားမယ်"), start_command))
+
     # ── Inline button callbacks ────────────────────────────
     # Main menu selections, video selection, and back buttons
     app.add_handler(CallbackQueryHandler(handle_callback, pattern=r"^(main_|buy:|video:|page:|back_to_main|retry)"))

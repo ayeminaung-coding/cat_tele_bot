@@ -30,6 +30,7 @@ class Settings:
     WEBHOOK_URL: str
     ADMIN_GROUP_ID: int
     VIP_CHANNEL_ID: int
+    VIP_INVITE_LINK_PAID: str
     ADMIN_IDS: List[int]
     SUPABASE_URL: str
     SUPABASE_SERVICE_KEY: str
@@ -41,6 +42,7 @@ class Settings:
     REDIS_URL: str
     UPDATE_WORKERS: int
     UPDATE_QUEUE_SIZE: int
+    ADMIN_REVIEW_TIME_HOURS: int
 
 
 def load_settings() -> Settings:
@@ -49,6 +51,7 @@ def load_settings() -> Settings:
         WEBHOOK_URL=_require("WEBHOOK_URL").rstrip("/"),
         ADMIN_GROUP_ID=int(_require("ADMIN_GROUP_ID")),
         VIP_CHANNEL_ID=int(_require("VIP_CHANNEL_ID")),
+        VIP_INVITE_LINK_PAID=os.getenv("VIP_INVITE_LINK_PAID", ""),
         ADMIN_IDS=_get_admin_ids(),
         SUPABASE_URL=_require("SUPABASE_URL"),
         SUPABASE_SERVICE_KEY=_require("SUPABASE_SERVICE_KEY"),
@@ -60,6 +63,7 @@ def load_settings() -> Settings:
         REDIS_URL=os.getenv("REDIS_URL", "").strip(),
         UPDATE_WORKERS=int(os.getenv("UPDATE_WORKERS", "8")),
         UPDATE_QUEUE_SIZE=int(os.getenv("UPDATE_QUEUE_SIZE", "1000")),
+        ADMIN_REVIEW_TIME_HOURS=int(os.getenv("ADMIN_REVIEW_TIME_HOURS", "1")),
     )
 
 
