@@ -12,6 +12,7 @@ from db.videos import get_video
 from db.logs import log_action
 from data.messages import (
     PAYMENT_RECEIVED,
+    PAYMENT_RECEIVED_NIGHT,
     INVALID_FILE_TYPE,
     NOT_IN_PAYMENT_FLOW,
     UPLOAD_FAILED,
@@ -113,7 +114,18 @@ async def handle_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         video_id=video_id
     )
 
-    await update.message.reply_text(PAYMENT_RECEIVED)
+    from datetime import datetime
+    import pytz
+
+    # Check if it is currently night time (1 AM to 7 AM Myanmar time)
+    tz = pytz.timezone('Asia/Yangon')
+    current_hour = datetime.now(tz).hour
+    is_night_time = 1 <= current_hour < 7
+
+    if is_night_time:
+        await update.message.reply_text(PAYMENT_RECEIVED_NIGHT)
+    else:
+        await update.message.reply_text(PAYMENT_RECEIVED)
     await sm.reset(user.id)
 
     # ── Forward to Admin Group ──────────────────────────────
@@ -131,7 +143,8 @@ async def handle_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         order_type=order_type,
         amount=amount,
         file_id=file_id,
-        video_title=video_title
+        video_title=video_title,
+        disable_notification=is_night_time,
     )
 
     if admin_msg_id:

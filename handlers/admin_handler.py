@@ -57,9 +57,13 @@ async def forward_to_admin(
     order_type: str,
     amount: int,
     file_id: str,
-    video_title: str | None = None
+    video_title: str | None = None,
+    disable_notification: bool = False,
 ) -> int | None:
     caption = admin_caption(user_id, username, first_name, order_type, amount, order_id, video_title)
+    
+    if disable_notification:
+        caption = "🌙 [Night Order]\n\n" + caption
 
     try:
         msg = await async_retry(
@@ -69,6 +73,7 @@ async def forward_to_admin(
                 caption=caption,
                 parse_mode="HTML",
                 reply_markup=admin_action_keyboard(order_id),
+                disable_notification=disable_notification,
             ),
             label="forward_to_admin",
         )
