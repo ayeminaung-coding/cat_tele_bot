@@ -17,7 +17,7 @@ steps:
       - '--image'
       - 'gcr.io/$PROJECT_ID/whitecatbot:$COMMIT_SHA'
       - '--region'
-      - 'asia-southeast1' # Change this if your region is different!
+      - 'us-central1'
 
 # Fixes your exact error by forcing Cloud Logging only
 options:
