@@ -63,6 +63,16 @@ def admin_action_keyboard(order_id: str) -> InlineKeyboardMarkup:
         ]
     ])
 
+
+def join_request_admin_keyboard(chat_id: int, user_id: int) -> InlineKeyboardMarkup:
+    """Approve / reject buttons for channel join requests."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Approve Join", callback_data=f"jr:approve:{chat_id}:{user_id}"),
+            InlineKeyboardButton("❌ Reject Join", callback_data=f"jr:reject:{chat_id}:{user_id}"),
+        ]
+    ])
+
 def after_payment_keyboard() -> InlineKeyboardMarkup:
     """Keyboard sent after payment approval/rejection to restart the bot"""
     return InlineKeyboardMarkup([

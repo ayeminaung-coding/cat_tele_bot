@@ -6,6 +6,7 @@ from telegram.ext import (
     CommandHandler,
     MessageHandler,
     CallbackQueryHandler,
+    ChatJoinRequestHandler,
     filters,
 )
 from config import settings
@@ -28,6 +29,7 @@ from handlers.admin_video_handler import (
     handle_delete_cancel,
 )
 from handlers.message_router import handle_admin_reply
+from handlers.join_request_handler import handle_join_request, handle_join_request_callback
 from handlers.error_handler import handle_error
 from utils.session import create_session_manager
 
@@ -53,6 +55,7 @@ def build_application() -> Application:
     
     # ── Admin approve/reject (prefix: "approve:" / "reject:")
     app.add_handler(CallbackQueryHandler(handle_admin_callback, pattern=r"^(approve|reject):"))
+    app.add_handler(CallbackQueryHandler(handle_join_request_callback, pattern=r"^jr:"))
 
     # ── Admin video management ─────────────────────────────
     app.add_handler(CommandHandler("userstats", userstats_command))
@@ -84,6 +87,9 @@ def build_application() -> Application:
             handle_admin_reply,
         )
     )
+
+    # ── Join requests from VIP channels/groups ─────────────
+    app.add_handler(ChatJoinRequestHandler(handle_join_request))
 
     # Generic User Text Fallback (Send to Admin)
     # MUST BE LAST so it doesn't swallow conversation state texts

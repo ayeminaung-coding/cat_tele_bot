@@ -65,13 +65,31 @@ async def handle_user_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         return
 
     user = update.effective_user
-    text = update.message.text
+    message = update.message
+    text = message.text
+
+    # Telegram may expose forward metadata through different fields depending on API version.
+    is_forwarded = any(
+        [
+            getattr(message, "forward_origin", None),
+            getattr(message, "forward_date", None),
+            getattr(message, "forward_from", None),
+            getattr(message, "forward_from_chat", None),
+            getattr(message, "forward_sender_name", None),
+        ]
+    )
+    if is_forwarded:
+        await message.reply_text(
+            "⚠️ Forward message ကို လက်ခံမည်မဟုတ်ပါ.\n"
+            "ကျေးဇူးပြု၍ စာအသစ်ရိုက်ပြီး ပို့ပေးပါ။"
+        )
+        return
 
     safe_name = html.escape(user.full_name or "User")
     safe_text = html.escape(text or "")
     
     # Send a quick acknowledgment
-    await update.message.reply_text("📨 သင်၏မက်ဆေ့ခ်ျကို Admin ထံသို့ ပေးပို့လိုက်ပါသည်။ Admin မှ အမြန်ဆုံး အကြောင်းပြန်ပေးပါမည်။")
+    await message.reply_text("📨 သင်၏မက်ဆေ့ခ်ျကို Admin ထံသို့ ပေးပို့လိုက်ပါသည်။ Admin မှ အမြန်ဆုံး အကြောင်းပြန်ပေးပါမည်။")
     
     # Forward to admin group
     admin_msg = (
