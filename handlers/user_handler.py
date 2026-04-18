@@ -209,7 +209,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         amount = 5000
         await sm.set(user.id, state=AWAITING_SCREENSHOT, order_type="bundle", amount=amount)
         
-        await query.edit_message_text(
+        try:
+            await query.edit_message_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+
+        await context.bot.send_message(
+            chat_id=user.id,
             text=bundle_payment_instructions(amount),
             reply_markup=back_to_main_keyboard()
         )
