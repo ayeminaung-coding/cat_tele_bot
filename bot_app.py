@@ -17,7 +17,7 @@ from handlers.user_handler import (
     handle_user_text,
 )
 from handlers.payment_handler import handle_screenshot
-from handlers.admin_handler import handle_admin_callback, userstats_command
+from handlers.admin_handler import handle_admin_callback, userstats_command, health_command
 from handlers.admin_video_handler import (
     build_addvideo_conv,
     build_setvideolink_conv,
@@ -30,6 +30,7 @@ from handlers.admin_video_handler import (
 )
 from handlers.message_router import handle_admin_reply
 from handlers.join_request_handler import handle_join_request, handle_join_request_callback
+from handlers.broadcast_handler import build_broadcast_conv
 from handlers.error_handler import handle_error
 from utils.session import create_session_manager
 
@@ -59,6 +60,8 @@ def build_application() -> Application:
 
     # ── Admin video management ─────────────────────────────
     app.add_handler(CommandHandler("userstats", userstats_command))
+    app.add_handler(CommandHandler("health", health_command))
+    app.add_handler(build_broadcast_conv())
     app.add_handler(build_addvideo_conv())
     app.add_handler(build_setvideolink_conv())
     app.add_handler(build_setchannelid_conv())

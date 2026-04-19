@@ -1,15 +1,16 @@
 """
 handlers/payment_handler.py — Handles screenshot uploads from users.
 """
+import hashlib
 import logging
 import io
 from telegram import Update, PhotoSize, Document
 from telegram.ext import ContextTypes
 
 from db.storage import upload_screenshot
-from db.orders import create_order, set_admin_msg_id
+from db.orders import create_order, set_admin_msg_id, get_user_pending_orders_last_24h
 from db.videos import get_video
-from db.logs import log_action
+from db.logs import log_action, count_user_actions
 from data.messages import (
     PAYMENT_RECEIVED,
     PAYMENT_RECEIVED_NIGHT,
@@ -105,6 +106,41 @@ async def handle_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.message.reply_text(UPLOAD_FAILED)
         return
 
+    # ── Risk signals (flag-only; no auto-reject) ─────────────
+    screenshot_hash = hashlib.sha256(file_bytes).hexdigest()
+    hash_detail = f"hash={screenshot_hash}"
+    previous_hash_count = await count_user_actions(
+        action_type="screenshot_hash_seen",
+        user_id=user.id,
+        detail=hash_detail,
+    )
+    pending_24h = await get_user_pending_orders_last_24h(user.id)
+
+    await log_action(
+        action_type="screenshot_hash_seen",
+        user_id=user.id,
+        detail=hash_detail,
+    )
+
+    risk_parts: list[str] = []
+    if previous_hash_count > 0:
+        risk_parts.append(f"hash_reuse={previous_hash_count + 1}x")
+        await log_action(
+            action_type="risk_hash_reuse",
+            user_id=user.id,
+            detail=f"{hash_detail} prior={previous_hash_count}",
+        )
+
+    if pending_24h >= 3:
+        risk_parts.append(f"pending_24h={pending_24h + 1}")
+        await log_action(
+            action_type="risk_pending_spike",
+            user_id=user.id,
+            detail=f"pending_24h_before_create={pending_24h}",
+        )
+
+    risk_note = "; ".join(risk_parts) if risk_parts else None
+
     # ── Create Order ────────────────────────────────────────
     order_id = await create_order(
         user_id=user.id,
@@ -144,6 +180,7 @@ async def handle_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         amount=amount,
         file_id=file_id,
         video_title=video_title,
+        risk_note=risk_note,
         disable_notification=is_night_time,
     )
 

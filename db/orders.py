@@ -1,6 +1,7 @@
 """
 db/orders.py — Order CRUD operations (replaces payments.py).
 """
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from db.client import get_supabase
 from utils.db_async import run_blocking
@@ -78,7 +79,6 @@ async def update_order_status(
 
 async def get_order_stats() -> dict:
     """Fetch total orders for today and yesterday."""
-    from datetime import datetime, timezone, timedelta
     sb = get_supabase()
     
     now = datetime.now(timezone.utc)
@@ -108,3 +108,44 @@ async def get_order_stats() -> dict:
         "today": today_count,
         "yesterday": yesterday_count
     }
+
+
+async def get_approved_order_user_ids(order_type: str | None = None) -> list[int]:
+    """Return unique user IDs that have approved orders, optionally filtered by order type."""
+    sb = get_supabase()
+
+    def _query():
+        q = sb.table("orders").select("user_id").eq("status", "approved")
+        if order_type:
+            q = q.eq("type", order_type)
+        return q.execute()
+
+    result = await run_blocking(_query)
+    rows = result.data or []
+    ids = {int(row["user_id"]) for row in rows if row.get("user_id") is not None}
+    return list(ids)
+
+
+async def get_all_order_user_ids() -> list[int]:
+    """Return unique user IDs that have at least one order."""
+    sb = get_supabase()
+    result = await run_blocking(lambda: sb.table("orders").select("user_id").execute())
+    rows = result.data or []
+    ids = {int(row["user_id"]) for row in rows if row.get("user_id") is not None}
+    return list(ids)
+
+
+async def get_user_pending_orders_last_24h(user_id: int) -> int:
+    """Count pending orders created by this user in the last 24 hours."""
+    sb = get_supabase()
+    since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    result = await run_blocking(
+        lambda: sb.table("orders")
+        .select("id", count="exact")
+        .eq("user_id", user_id)
+        .eq("status", "pending")
+        .gte("created_at", since)
+        .limit(0)
+        .execute()
+    )
+    return result.count if result.count is not None else 0

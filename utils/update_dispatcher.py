@@ -46,6 +46,15 @@ class UpdateDispatcher:
         except asyncio.QueueFull:
             return False
 
+    def queue_size(self) -> int:
+        return self._queue.qsize()
+
+    def queue_capacity(self) -> int:
+        return self._queue.maxsize
+
+    def worker_count(self) -> int:
+        return self._workers
+
     async def _worker(self, worker_id: int) -> None:
         while True:
             payload = await self._queue.get()

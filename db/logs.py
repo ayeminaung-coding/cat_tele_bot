@@ -33,3 +33,21 @@ async def log_action(
         )
     except Exception as e:
         logger.error(f"[LOG FALLBACK] action={action_type} user={user_id} detail={detail} | err={e}")
+
+
+async def count_user_actions(
+    action_type: str,
+    user_id: int,
+    detail: Optional[str] = None,
+) -> int:
+    """Count matching log actions for a user (optionally by exact detail)."""
+    sb = get_supabase()
+
+    def _query():
+        q = sb.table("logs").select("id", count="exact").eq("action_type", action_type).eq("user_id", user_id)
+        if detail is not None:
+            q = q.eq("detail", detail)
+        return q.limit(0).execute()
+
+    result = await run_blocking(_query)
+    return result.count if result.count is not None else 0

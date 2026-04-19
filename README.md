@@ -137,6 +137,8 @@ telegram_vip_bot/
 | `REDIS_URL` | ❌ | Redis connection URL for shared session state (recommended in production) |
 | `UPDATE_WORKERS` | ❌ | Background workers for webhook update processing (default: 8) |
 | `UPDATE_QUEUE_SIZE` | ❌ | Max queued webhook updates before returning 503 (default: 1000) |
+| `BROADCAST_BATCH_SIZE` | ❌ | Number of users per broadcast batch (default: 20) |
+| `BROADCAST_BATCH_DELAY_SECONDS` | ❌ | Delay between broadcast batches in seconds (default: 0.4) |
 
 ### Production tuning notes
 
@@ -178,6 +180,7 @@ telegram_vip_bot/
 | `/setvideolink` | Set the target Telegram invite/channel link for a specific video. When users buy this video, they receive this link automatically upon approval. |
 | `/setbundletext` | Update the text displayed when a user clicks the "Bundle" purchase option. |
 | `/userstats` | View a quick statistical report of the total number of users and users who joined today. |
+| `/broadcast` | Start admin broadcast flow with selectable user segments (all, paid, no-order, single buyers, bundle buyers). |
 | `/cancel` | Cancel any ongoing admin flow (adding, deleting, link setting) without saving. |
 | *(Reply to Support)* | If an admin **Replies** to a Support Ticket or Payment inside the Admin Group with Text, Photo, or Video, the bot will secretly copy and forward that reply directly to the User's DM! |
 

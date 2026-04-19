@@ -1,6 +1,7 @@
 """
 handlers/admin_handler.py — Admin group: forward order + approve/reject callbacks.
 """
+import asyncio
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -48,6 +49,56 @@ async def userstats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     )
     await update.message.reply_text(msg, parse_mode="HTML")
 
+
+async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin-only Telegram /health command."""
+    if update.effective_user.id not in settings.ADMIN_IDS:
+        await update.message.reply_text("⛔ ဤ command ကို Admin သာ သုံးနိုင်သည်။")
+        return
+
+    health_status = "ok"
+
+    # Database check
+    db_text = "connected"
+    try:
+        from db.client import get_supabase
+        sb = get_supabase()
+        await asyncio.to_thread(
+            lambda: sb.table("users").select("telegram_id").limit(1).execute()
+        )
+    except Exception as e:
+        db_text = f"error: {str(e)[:50]}"
+        health_status = "degraded"
+
+    # Bot check
+    bot_text = "unknown"
+    try:
+        me = await context.bot.get_me()
+        bot_text = f"@{me.username}"
+    except Exception as e:
+        bot_text = f"error: {str(e)[:50]}"
+        health_status = "degraded"
+
+    # Queue check (if available)
+    queue_line = "n/a"
+    dispatcher = context.application.bot_data.get("update_dispatcher")
+    if dispatcher and hasattr(dispatcher, "queue_size") and hasattr(dispatcher, "queue_capacity"):
+        q_size = dispatcher.queue_size()
+        q_cap = dispatcher.queue_capacity()
+        utilization = (q_size / q_cap) if q_cap else 0.0
+        queue_line = f"{q_size}/{q_cap} ({utilization:.1%})"
+        if utilization >= 0.9:
+            health_status = "degraded"
+
+    msg = (
+        "🩺 <b>Bot Health</b>\n\n"
+        f"Status: <b>{health_status}</b>\n"
+        f"Database: <code>{db_text}</code>\n"
+        f"Bot: <code>{bot_text}</code>\n"
+        f"Queue: <code>{queue_line}</code>"
+    )
+    await update.message.reply_text(msg, parse_mode="HTML")
+
 async def forward_to_admin(
     context: ContextTypes.DEFAULT_TYPE,
     order_id: str,
@@ -58,9 +109,19 @@ async def forward_to_admin(
     amount: int,
     file_id: str,
     video_title: str | None = None,
+    risk_note: str | None = None,
     disable_notification: bool = False,
 ) -> int | None:
-    caption = admin_caption(user_id, username, first_name, order_type, amount, order_id, video_title)
+    caption = admin_caption(
+        user_id,
+        username,
+        first_name,
+        order_type,
+        amount,
+        order_id,
+        video_title,
+        risk_note,
+    )
     
     if disable_notification:
         caption = "🌙 [Night Order]\n\n" + caption

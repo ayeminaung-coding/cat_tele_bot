@@ -73,6 +73,27 @@ def join_request_admin_keyboard(chat_id: int, user_id: int) -> InlineKeyboardMar
         ]
     ])
 
+
+def broadcast_segment_keyboard(counts: Dict[str, int]) -> InlineKeyboardMarkup:
+    """Admin broadcast segment picker with audience counts."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"All users ({counts.get('all', 0)})", callback_data="bc:seg:all")],
+        [InlineKeyboardButton(f"Paid users ({counts.get('paid', 0)})", callback_data="bc:seg:paid")],
+        [InlineKeyboardButton(f"No-order users ({counts.get('no_order', 0)})", callback_data="bc:seg:no_order")],
+        [InlineKeyboardButton(f"Single buyers ({counts.get('single', 0)})", callback_data="bc:seg:single")],
+        [InlineKeyboardButton(f"Bundle buyers ({counts.get('bundle', 0)})", callback_data="bc:seg:bundle")],
+        [InlineKeyboardButton("❌ Cancel", callback_data="bc:cancel")],
+    ])
+
+
+def broadcast_confirm_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Send", callback_data="bc:send"),
+            InlineKeyboardButton("❌ Cancel", callback_data="bc:cancel"),
+        ]
+    ])
+
 def after_payment_keyboard() -> InlineKeyboardMarkup:
     """Keyboard sent after payment approval/rejection to restart the bot"""
     return InlineKeyboardMarkup([

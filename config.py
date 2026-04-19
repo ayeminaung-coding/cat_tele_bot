@@ -43,6 +43,8 @@ class Settings:
     UPDATE_WORKERS: int
     UPDATE_QUEUE_SIZE: int
     ADMIN_REVIEW_TIME_HOURS: int
+    BROADCAST_BATCH_SIZE: int
+    BROADCAST_BATCH_DELAY_SECONDS: float
 
 
 def load_settings() -> Settings:
@@ -64,6 +66,8 @@ def load_settings() -> Settings:
         UPDATE_WORKERS=int(os.getenv("UPDATE_WORKERS", "8")),
         UPDATE_QUEUE_SIZE=int(os.getenv("UPDATE_QUEUE_SIZE", "1000")),
         ADMIN_REVIEW_TIME_HOURS=int(os.getenv("ADMIN_REVIEW_TIME_HOURS", "1")),
+        BROADCAST_BATCH_SIZE=int(os.getenv("BROADCAST_BATCH_SIZE", "20")),
+        BROADCAST_BATCH_DELAY_SECONDS=float(os.getenv("BROADCAST_BATCH_DELAY_SECONDS", "0.4")),
     )
 
 

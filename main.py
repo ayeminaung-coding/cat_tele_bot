@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, Request, Response, status
 from telegram import Update
@@ -26,6 +27,7 @@ dispatcher = UpdateDispatcher(
     workers=settings.UPDATE_WORKERS,
     queue_size=settings.UPDATE_QUEUE_SIZE,
 )
+ptb_app.bot_data["update_dispatcher"] = dispatcher
 
 
 @asynccontextmanager
@@ -77,8 +79,15 @@ async def health_check():
     """Health check with database and bot connectivity verification."""
     health = {
         "status": "ok",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "webhook_url": f"{settings.WEBHOOK_URL}/webhook",
         "database": "unknown",
         "bot": "unknown",
+        "queue": {
+            "size": dispatcher.queue_size(),
+            "capacity": dispatcher.queue_capacity(),
+            "workers": dispatcher.worker_count(),
+        },
     }
 
     # Check database connectivity
@@ -100,6 +109,12 @@ async def health_check():
     except Exception as e:
         health["bot"] = f"error: {str(e)[:50]}"
         health["status"] = "degraded"
+
+    if health["queue"]["capacity"] > 0:
+        utilization = health["queue"]["size"] / health["queue"]["capacity"]
+        health["queue"]["utilization"] = round(utilization, 3)
+        if utilization >= 0.9:
+            health["status"] = "degraded"
 
     return health
 

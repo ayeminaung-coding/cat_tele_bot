@@ -133,7 +133,8 @@ def admin_caption(
     order_type: str, 
     amount: int, 
     order_id: str,
-    video_title: str | None = None
+    video_title: str | None = None,
+    risk_note: str | None = None,
 ) -> str:
     # Use HTML markdown linking so clicking the name goes directly to their DM
     safe_first_name = html.escape(first_name or "User")
@@ -145,7 +146,7 @@ def admin_caption(
     else:
         item_text = "📦 ဇာတ်ကား ၁၅ ကား Bundle"
 
-    return (
+    msg = (
         f"💰 ငွေပေးချေမှု တင်ပြချက်\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
         f"👤 အမည်  : {profile_link} ({uname})\n"
@@ -153,9 +154,14 @@ def admin_caption(
         f"{item_text}\n"
         f"💵 ပမာဏ  : {amount:,} ကျပ်\n"
         f"🔑 Order ID  : <code>{order_id}</code>\n"
-        f"━━━━━━━━━━━━━━━━━━━\n"
-        f"⬇️ အောက်မှ ဆုံးဖြတ်ချက်ချပါ:"
+        f"━━━━━━━━━━━━━━━━━━━"
     )
+
+    if risk_note:
+        msg += f"\n⚠️ Risk Flag: {html.escape(risk_note)}"
+
+    msg += "\n⬇️ အောက်မှ ဆုံးဖြတ်ချက်ချပါ:"
+    return msg
 
 def admin_approved_caption(admin_name: str) -> str:
     return f"✅ **{admin_name}** မှ အတည်ပြုပြီး"
@@ -262,6 +268,44 @@ def setchannelid_success(title: str) -> str:
     return f"✅ '{title}' အတွက် Channel ID သိမ်းပြီ!"
 
 SETCHANNELID_CANCELLED = "❌ Channel ID သတ်မှတ်ခြင်း ပယ်ဖျက်ပြီ။"
+
+
+# ── BROADCAST FLOW ─────────────────────────────────────────────────────────
+
+BROADCAST_SEGMENT_PROMPT = (
+    "📣 Broadcast ပို့မယ့် User အုပ်စုကို ရွေးပါ။"
+)
+
+BROADCAST_ASK_MESSAGE = (
+    "✍️ ပို့မယ့် message ကို စာဖြင့် ရိုက်ထည့်ပါ။\n"
+    "(ပယ်ဖျက်လိုပါက Cancel ကိုနှိပ်ပါ)"
+)
+
+
+def broadcast_confirm_message(segment_label: str, total_users: int, body: str) -> str:
+    return (
+        "📋 Broadcast အတည်ပြုရန်\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        f"👥 Segment: {segment_label}\n"
+        f"🎯 Target Users: {total_users}\n\n"
+        "📝 Message Preview:\n"
+        f"{body}\n\n"
+        "အတည်ပြုရန် Send ကိုနှိပ်ပါ။"
+    )
+
+
+def broadcast_result_message(segment_label: str, target: int, sent: int, failed: int) -> str:
+    return (
+        "✅ Broadcast ပြီးပါပြီ\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        f"👥 Segment: {segment_label}\n"
+        f"🎯 Target: {target}\n"
+        f"✅ Sent: {sent}\n"
+        f"❌ Failed: {failed}"
+    )
+
+
+BROADCAST_CANCELLED = "❌ Broadcast ပယ်ဖျက်ပြီးပါပြီ။"
 
 
 # ── SINGLE VIDEO APPROVAL WITH LINK ────────────────────────────────────────
