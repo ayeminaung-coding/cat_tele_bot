@@ -100,6 +100,33 @@ async def handle_user_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     if not text:
         return
 
+    lower_text = text.strip().lower()
+    # If a user types buying intent instead of pressing inline buttons,
+    # send the purchase menu instead of creating a support ticket.
+    buy_intent_keywords = (
+        "vip",
+        "buy",
+        "ဝယ်",
+        "တစ်ပုဒ်",
+        "15ပုဒ်",
+        "၁၅",
+        "bundle",
+        "single",
+        "start",
+        "menu",
+    )
+    if any(k in lower_text for k in buy_intent_keywords):
+        await message.reply_text(
+            "VIP ဝယ်ယူရန် အောက်ကခလုတ်များကိုနှိပ်ပါ။ ခလုတ်မမြင်ရလျှင် /start ကိုနှိပ်ပါ။",
+            reply_markup=main_menu_keyboard(),
+        )
+        await context.bot.send_message(
+            chat_id=user.id,
+            text=WELCOME,
+            reply_markup=start_inline_keyboard(),
+        )
+        return
+
     # Telegram may expose forward metadata through different fields depending on API version.
     is_forwarded = any(
         [

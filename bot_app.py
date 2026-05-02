@@ -32,6 +32,12 @@ from handlers.message_router import handle_admin_reply
 from handlers.join_request_handler import handle_join_request, handle_join_request_callback
 from handlers.broadcast_handler import build_broadcast_conv
 from handlers.error_handler import handle_error
+from handlers.giveaway_handler import (
+    giveaway_start_command,
+    giveaway_draw_command,
+    giveaway_stats_command,
+    handle_giveaway_comment,
+)
 from utils.session import create_session_manager
 
 
@@ -61,6 +67,9 @@ def build_application() -> Application:
     # ── Admin video management ─────────────────────────────
     app.add_handler(CommandHandler("userstats", userstats_command))
     app.add_handler(CommandHandler("health", health_command))
+    app.add_handler(CommandHandler("giveaway_start", giveaway_start_command))
+    app.add_handler(CommandHandler("giveaway_draw", giveaway_draw_command))
+    app.add_handler(CommandHandler("giveaway_stats", giveaway_stats_command))
     app.add_handler(build_broadcast_conv())
     app.add_handler(build_addvideo_conv())
     app.add_handler(build_setvideolink_conv())
@@ -88,6 +97,14 @@ def build_application() -> Application:
         MessageHandler(
             filters.Chat(settings.ADMIN_GROUP_ID) & filters.REPLY & ~filters.COMMAND,
             handle_admin_reply,
+        )
+    )
+
+    # ── Giveaway comment capture ───────────────────────────
+    app.add_handler(
+        MessageHandler(
+            filters.Chat(settings.DISCUSSION_GROUP_ID) & ~filters.COMMAND,
+            handle_giveaway_comment,
         )
     )
 

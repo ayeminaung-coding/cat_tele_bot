@@ -72,6 +72,48 @@ CREATE INDEX IF NOT EXISTS idx_logs_action_type ON logs(action_type);
 CREATE INDEX IF NOT EXISTS idx_logs_user_id     ON logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_logs_timestamp   ON logs(timestamp DESC);
 
+-- ── Giveaways ────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS giveaways (
+    id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    channel_id         BIGINT NOT NULL,
+    post_id            BIGINT NOT NULL,
+    discussion_chat_id BIGINT NOT NULL,
+    status             TEXT NOT NULL DEFAULT 'active'
+                         CHECK (status IN ('active', 'closed', 'drawn')),
+    winner_count       INTEGER NOT NULL DEFAULT 1,
+    winner_user_ids    BIGINT[] NOT NULL DEFAULT '{}',
+    created_by         BIGINT,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    closed_at          TIMESTAMPTZ,
+    drawn_at           TIMESTAMPTZ
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_giveaways_active_post
+    ON giveaways(channel_id, post_id)
+    WHERE status = 'active';
+
+CREATE INDEX IF NOT EXISTS idx_giveaways_status ON giveaways(status);
+
+-- ── Giveaway Entries ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS giveaway_entries (
+    id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    giveaway_id        UUID NOT NULL REFERENCES giveaways(id) ON DELETE CASCADE,
+    user_id            BIGINT NOT NULL,
+    username           TEXT,
+    first_name         TEXT,
+    comment_text       TEXT,
+    comment_message_id BIGINT NOT NULL,
+    comment_chat_id    BIGINT NOT NULL,
+    comment_created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_giveaway_entries_unique_user
+    ON giveaway_entries(giveaway_id, user_id);
+
+CREATE INDEX IF NOT EXISTS idx_giveaway_entries_giveaway
+    ON giveaway_entries(giveaway_id);
+
 -- ── Config (for app settings like bundle text) ───────────────
 CREATE TABLE IF NOT EXISTS config (
     key        TEXT PRIMARY KEY,
@@ -87,9 +129,3 @@ ON CONFLICT (key) DO NOTHING;
 -- ============================================================
 -- Seed data (Test videos) - Skip if already exists
 -- ============================================================
-INSERT INTO videos (id, title, status, price) VALUES
-('vid_01', 'Myanmar Movie Selection 1', 'available', 1000),
-('vid_02', 'Action Blockbuster 2026', 'available', 1000),
-('vid_03', 'Comedy Special', 'available', 1000),
-('vid_04', 'Exclusive Content (Not Ready)', 'unavailable', 1000)
-ON CONFLICT (id) DO NOTHING;
