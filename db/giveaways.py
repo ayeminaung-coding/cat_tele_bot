@@ -48,6 +48,25 @@ async def get_active_giveaway_by_post(channel_id: int, post_id: int) -> Optional
         .maybe_single()
         .execute()
     )
+    if not result:
+        return None
+    return result.data
+
+
+async def get_giveaway_by_post(channel_id: int, post_id: int) -> Optional[dict]:
+    sb = get_supabase()
+    result = await run_blocking(
+        lambda: sb.table("giveaways")
+        .select("*")
+        .eq("channel_id", channel_id)
+        .eq("post_id", post_id)
+        .order("created_at", desc=True)
+        .limit(1)
+        .maybe_single()
+        .execute()
+    )
+    if not result:
+        return None
     return result.data
 
 
@@ -60,6 +79,20 @@ async def mark_giveaway_drawn(giveaway_id: str, winner_user_ids: list[int]) -> N
             "status": "drawn",
             "winner_user_ids": winner_user_ids,
             "drawn_at": now,
+        })
+        .eq("id", giveaway_id)
+        .execute()
+    )
+
+
+async def reset_giveaway_draw(giveaway_id: str) -> None:
+    sb = get_supabase()
+    await run_blocking(
+        lambda: sb.table("giveaways")
+        .update({
+            "status": "active",
+            "winner_user_ids": None,
+            "drawn_at": None,
         })
         .eq("id", giveaway_id)
         .execute()

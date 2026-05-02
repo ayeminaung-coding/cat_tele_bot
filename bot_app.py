@@ -36,6 +36,7 @@ from handlers.giveaway_handler import (
     giveaway_start_command,
     giveaway_draw_command,
     giveaway_stats_command,
+    giveaway_reset_command,
     handle_giveaway_comment,
 )
 from utils.session import create_session_manager
@@ -70,6 +71,7 @@ def build_application() -> Application:
     app.add_handler(CommandHandler("giveaway_start", giveaway_start_command))
     app.add_handler(CommandHandler("giveaway_draw", giveaway_draw_command))
     app.add_handler(CommandHandler("giveaway_stats", giveaway_stats_command))
+    app.add_handler(CommandHandler("giveaway_reset", giveaway_reset_command))
     app.add_handler(build_broadcast_conv())
     app.add_handler(build_addvideo_conv())
     app.add_handler(build_setvideolink_conv())
@@ -105,7 +107,7 @@ def build_application() -> Application:
         MessageHandler(
             filters.Chat(settings.DISCUSSION_GROUP_ID) & ~filters.COMMAND,
             handle_giveaway_comment,
-        )
+        )   
     )
 
     # ── Join requests from VIP channels/groups ─────────────

@@ -131,7 +131,7 @@ async def test_giveaway_draw_dedupes_users(monkeypatch) -> None:
     monkeypatch.setattr(giveaway_handler, "list_giveaway_entries", fake_list_entries)
     monkeypatch.setattr(giveaway_handler, "mark_giveaway_drawn", fake_mark_drawn)
     monkeypatch.setattr(giveaway_handler, "log_action", fake_log_action)
-    monkeypatch.setattr(giveaway_handler.random, "sample", fake_sample)
+    monkeypatch.setattr(giveaway_handler._secure_rand, "sample", fake_sample)
 
     await giveaway_handler.giveaway_draw_command(update, context)
 

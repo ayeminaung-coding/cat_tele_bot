@@ -16,7 +16,9 @@ from db.giveaways import (
     create_giveaway,
     get_active_giveaway_by_post,
     get_giveaway_by_id,
+    get_giveaway_by_post,
     mark_giveaway_drawn,
+    reset_giveaway_draw,
 )
 from db.giveaway_entries import (
     create_giveaway_entry,
@@ -27,6 +29,7 @@ from db.giveaway_entries import (
 from db.logs import log_action
 
 logger = logging.getLogger(__name__)
+_secure_rand = random.SystemRandom()
 
 
 async def handle_giveaway_comment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -173,7 +176,7 @@ async def giveaway_draw_command(update: Update, context: ContextTypes.DEFAULT_TY
 
     winner_count = int(giveaway.get("winner_count", 1))
     sample_size = min(winner_count, len(unique_list))
-    winners = random.sample(unique_list, k=sample_size)
+    winners = _secure_rand.sample(unique_list, k=sample_size)
     winner_user_ids = [int(entry["user_id"]) for entry in winners]
 
     await mark_giveaway_drawn(giveaway_id=giveaway["id"], winner_user_ids=winner_user_ids)
@@ -240,6 +243,43 @@ async def giveaway_stats_command(update: Update, context: ContextTypes.DEFAULT_T
     await update.message.reply_text(response)
 
 
+async def giveaway_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message or not update.effective_user:
+        return
+
+    if update.effective_user.id not in settings.ADMIN_IDS:
+        await update.message.reply_text("⛔ Admin only")
+        return
+
+    args = context.args or []
+    if not args:
+        await update.message.reply_text(
+            "Usage: /giveaway_reset <giveaway_id_or_post_link>"
+        )
+        return
+
+    giveaway = await _resolve_giveaway(args[0], context)
+    if not giveaway:
+        await update.message.reply_text("Giveaway not found.")
+        return
+
+    if giveaway.get("status") != "drawn":
+        await update.message.reply_text("Giveaway is not drawn yet.")
+        return
+
+    await reset_giveaway_draw(giveaway_id=giveaway["id"])
+
+    await log_action(
+        action_type="giveaway_reset",
+        admin_id=update.effective_user.id,
+        detail=f"giveaway_id={giveaway['id']}",
+    )
+
+    await update.message.reply_text(
+        "Giveaway reset. You can draw again."
+    )
+
+
 def _extract_post_ref_from_comment(message) -> Tuple[Optional[int], Optional[int]]:
     replied = message.reply_to_message
     if not replied:
@@ -272,7 +312,11 @@ async def _resolve_giveaway(arg: str, context: ContextTypes.DEFAULT_TYPE) -> Opt
     if channel_id is None or post_id is None:
         return None
 
-    return await get_active_giveaway_by_post(channel_id=channel_id, post_id=post_id)
+    giveaway = await get_active_giveaway_by_post(channel_id=channel_id, post_id=post_id)
+    if giveaway:
+        return giveaway
+
+    return await get_giveaway_by_post(channel_id=channel_id, post_id=post_id)
 
 
 async def _parse_post_ref(ref: str, context: ContextTypes.DEFAULT_TYPE) -> Tuple[Optional[int], Optional[int]]:
