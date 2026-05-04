@@ -290,7 +290,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 )
             return
             
-        amount = 5000
+        amount = 4000
         await sm.set(user.id, state=AWAITING_SCREENSHOT, order_type="bundle", amount=amount)
         
         try:
