@@ -10,3 +10,6 @@ venv/
 env/
 *.log
 .DS_Store
+giveaway_entries.json
+*.session
+*.session-journal

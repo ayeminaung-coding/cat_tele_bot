@@ -1,9 +1,11 @@
 """
 handlers/user_handler.py — /start command and video selection.
 """
+import html
 import logging
 from pathlib import Path
 from telegram import Update
+from telegram.error import BadRequest, Forbidden
 from telegram.ext import ContextTypes
 
 from db.users import upsert_user, get_user
@@ -16,26 +18,144 @@ from data.messages import (
 )
 from data.keyboards import main_menu_keyboard, start_inline_keyboard, single_video_selection_keyboard, back_to_main_keyboard, buy_bundle_confirm_keyboard
 from utils.session import IDLE, SELECTING_VIDEO, AWAITING_SCREENSHOT
+from utils.rate_limiter import check_user_rate_limit
 
 logger = logging.getLogger(__name__)
 
 
 from config import settings
 
+
+LEGACY_CALLBACK_ALIASES = {
+    "buy_single": "main_buy_single",
+    "single": "main_buy_single",
+    "buy_bundle": "main_buy_bundle",
+    "bundle": "main_buy_bundle",
+    "main_menu": "back_to_main",
+    "back": "back_to_main",
+}
+
+
+def normalize_callback_data(data: str | None) -> str:
+    """Normalize old callback payloads to current callback format."""
+    if not data:
+        return ""
+
+    normalized = data.strip()
+    if not normalized:
+        return ""
+
+    if normalized in LEGACY_CALLBACK_ALIASES:
+        return LEGACY_CALLBACK_ALIASES[normalized]
+
+    if normalized.startswith("video_"):
+        return f"video:{normalized.split('_', 1)[1]}"
+
+    if normalized.startswith("page_"):
+        return f"page:{normalized.split('_', 1)[1]}"
+
+    if normalized.startswith("buy_"):
+        return f"buy:{normalized.split('_', 1)[1]}"
+
+    return normalized
+
+
+async def _safe_edit_callback_text(query, text: str, reply_markup=None) -> bool:
+    """Try to edit callback message text. Return False when edit is not possible."""
+    try:
+        await query.edit_message_text(text=text, reply_markup=reply_markup)
+        return True
+    except BadRequest as exc:
+        # Common benign cases: old/deleted message or no actual text change.
+        message = str(exc).lower()
+        if (
+            "message is not modified" in message
+            or "message to edit not found" in message
+            or "message can't be edited" in message
+            or "chat not found" in message
+        ):
+            logger.info("Callback message edit skipped: %s", exc)
+            return False
+        logger.warning("BadRequest while editing callback message: %s", exc)
+        return False
+    except Forbidden as exc:
+        logger.warning("Forbidden while editing callback message: %s", exc)
+        return False
+    except Exception:
+        logger.exception("Unexpected error while editing callback message")
+        return False
+
 async def handle_user_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Fallback handler for generic text messages. Forwards them to the admin group."""
+    if not update.message or not update.effective_user:
+        return
+
+    # Check rate limit first
+    if await check_user_rate_limit(update, context):
+        return
+
     user = update.effective_user
-    text = update.message.text
+    message = update.message
+    text = message.text
+    if not text:
+        return
+
+    lower_text = text.strip().lower()
+    # If a user types buying intent instead of pressing inline buttons,
+    # send the purchase menu instead of creating a support ticket.
+    buy_intent_keywords = (
+        "vip",
+        "buy",
+        "ဝယ်",
+        "တစ်ပုဒ်",
+        "15ပုဒ်",
+        "၁၅",
+        "bundle",
+        "single",
+        "start",
+        "menu",
+    )
+    if any(k in lower_text for k in buy_intent_keywords):
+        await message.reply_text(
+            "VIP ဝယ်ယူရန် အောက်ကခလုတ်များကိုနှိပ်ပါ။ ခလုတ်မမြင်ရလျှင် /start ကိုနှိပ်ပါ။",
+            reply_markup=main_menu_keyboard(),
+        )
+        await context.bot.send_message(
+            chat_id=user.id,
+            text=WELCOME,
+            reply_markup=start_inline_keyboard(),
+        )
+        return
+
+    # Telegram may expose forward metadata through different fields depending on API version.
+    is_forwarded = any(
+        [
+            getattr(message, "forward_origin", None),
+            getattr(message, "forward_date", None),
+            getattr(message, "forward_from", None),
+            getattr(message, "forward_from_chat", None),
+            getattr(message, "forward_sender_name", None),
+        ]
+    )
+    if is_forwarded:
+        await message.reply_text(
+            "⚠️ Forward message ကို လက်ခံမည်မဟုတ်ပါ.\n"
+            "ကျေးဇူးပြု၍ စာအသစ်ရိုက်ပြီး ပို့ပေးပါ။"
+        )
+        return
+
+    safe_name = html.escape(user.full_name or "User")
+    safe_text = html.escape(text or "")
     
     # Send a quick acknowledgment
-    await update.message.reply_text("📨 သင်၏မက်ဆေ့ခ်ျကို Admin ထံသို့ ပေးပို့လိုက်ပါသည်။ Admin မှ အမြန်ဆုံး အကြောင်းပြန်ပေးပါမည်။")
+    await message.reply_text("📨 သင်၏မက်ဆေ့ခ်ျကို Admin ထံသို့ ပေးပို့လိုက်ပါသည်။ Admin မှ အမြန်ဆုံး အကြောင်းပြန်ပေးပါမည်။")
     
     # Forward to admin group
     admin_msg = (
         f"📩 <b>#SupportTicket</b>\n"
-        f"User: <a href='tg://user?id={user.id}'>{user.full_name}</a>\n"
+        f"User: <a href='tg://user?id={user.id}'>{safe_name}</a>\n"
         f"ID: <code>{user.id}</code>\n\n"
-        f"{text}"
+        f"{safe_text}"
     )
     await context.bot.send_message(
         chat_id=settings.ADMIN_GROUP_ID,
@@ -70,6 +190,11 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     user = update.effective_user
     if not user:
         return
+
+    # Check rate limit (but allow admins to bypass)
+    if user.id not in settings.ADMIN_IDS:
+        if await check_user_rate_limit(update, context):
+            return
 
     await upsert_user(
         telegram_id=user.id,
@@ -130,7 +255,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     user = update.effective_user
     sm = context.bot_data["session_manager"]
-    data = query.data
+    data = normalize_callback_data(query.data)
 
     # Return to main menu
     if data == "back_to_main" or data == "retry":
@@ -152,16 +277,29 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if data == "main_buy_bundle" or data == "buy:bundle":
         if data == "main_buy_bundle":
             bundle_text = get_bundle_info()
-            await query.edit_message_text(
+            edited = await _safe_edit_callback_text(
+                query,
                 bundle_text,
-                reply_markup=buy_bundle_confirm_keyboard()
+                reply_markup=buy_bundle_confirm_keyboard(),
             )
+            if not edited:
+                await context.bot.send_message(
+                    chat_id=user.id,
+                    text=bundle_text,
+                    reply_markup=buy_bundle_confirm_keyboard(),
+                )
             return
             
         amount = 5000
         await sm.set(user.id, state=AWAITING_SCREENSHOT, order_type="bundle", amount=amount)
         
-        await query.edit_message_text(
+        try:
+            await query.edit_message_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+
+        await context.bot.send_message(
+            chat_id=user.id,
             text=bundle_payment_instructions(amount),
             reply_markup=back_to_main_keyboard()
         )
@@ -171,10 +309,17 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if data == "main_buy_single" or data == "buy:single":
         await sm.set(user.id, state=SELECTING_VIDEO, order_type="single")
         videos = await get_all_videos()
-        await query.edit_message_text(
+        edited = await _safe_edit_callback_text(
+            query,
             SINGLE_VIDEO_HEADER,
-            reply_markup=single_video_selection_keyboard(videos, page=0)
+            reply_markup=single_video_selection_keyboard(videos, page=0),
         )
+        if not edited:
+            await context.bot.send_message(
+                chat_id=user.id,
+                text=SINGLE_VIDEO_HEADER,
+                reply_markup=single_video_selection_keyboard(videos, page=0),
+            )
         return
 
     # ── PAGINATION ──────────────────────────────────────────
@@ -183,12 +328,23 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if session["state"] != SELECTING_VIDEO:
             return
             
-        page = int(data.split(":")[1])
+        try:
+            page = int(data.split(":")[1])
+        except (ValueError, IndexError):
+            await query.answer("Page data မမှန်ကန်ပါ။", show_alert=True)
+            return
         videos = await get_all_videos()
-        await query.edit_message_text(
+        edited = await _safe_edit_callback_text(
+            query,
             SINGLE_VIDEO_HEADER,
-            reply_markup=single_video_selection_keyboard(videos, page=page)
+            reply_markup=single_video_selection_keyboard(videos, page=page),
         )
+        if not edited:
+            await context.bot.send_message(
+                chat_id=user.id,
+                text=SINGLE_VIDEO_HEADER,
+                reply_markup=single_video_selection_keyboard(videos, page=page),
+            )
         return
 
     # ── SELECT SPECIFIC VIDEO ───────────────────────────────
@@ -201,7 +357,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         video = await get_video(video_id)
         
         if not video:
-            await query.edit_message_text("❓ မသိသော ဗီဒီယို။ /start ပြန်နှိပ်ပါ။")
+            edited = await _safe_edit_callback_text(query, "❓ မသိသော ဗီဒီယို။ /start ပြန်နှိပ်ပါ။")
+            if not edited:
+                await context.bot.send_message(
+                    chat_id=user.id,
+                    text="❓ မသိသော ဗီဒီယို။ /start ပြန်နှိပ်ပါ။",
+                )
             return
 
         if video["status"] == "unavailable":
@@ -210,9 +371,41 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         amount = video["price"]
         await sm.set(user.id, state=AWAITING_SCREENSHOT, video_id=video_id, amount=amount)
-        await query.edit_message_text(
-            text=single_payment_instructions(video["title"], amount),
-            reply_markup=back_to_main_keyboard()
+        payment_text = single_payment_instructions(video["title"], amount)
+        edited = await _safe_edit_callback_text(
+            query,
+            payment_text,
+            reply_markup=back_to_main_keyboard(),
         )
+        if not edited:
+            await context.bot.send_message(
+                chat_id=user.id,
+                text=payment_text,
+                reply_markup=back_to_main_keyboard(),
+            )
         return
+
+
+async def handle_stale_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Fallback for outdated inline buttons still visible in user chat history."""
+    query = update.callback_query
+    user = update.effective_user
+    if not query or not user:
+        return
+
+    await query.answer("ခလုတ်ဟောင်းဖြစ်နေပါတယ်။ အသစ်ပြန်ဖွင့်ပေးလိုက်ပါပြီ။", show_alert=True)
+
+    sm = context.bot_data["session_manager"]
+    await sm.reset(user.id)
+
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+
+    await context.bot.send_message(
+        chat_id=user.id,
+        text=WELCOME,
+        reply_markup=start_inline_keyboard(),
+    )
 

@@ -16,6 +16,7 @@ Myanmar-language UX | KBZPay payments | Admin group approval | Unique invite lin
 - 🔒 Admin ID whitelist, duplicate approval guard, banned user check
 - 📁 Supabase Storage for screenshots (signed URLs, 5MB limit)
 - 🔄 Webhook mode (FastAPI) — production-ready
+- 🎁 Giveaway drawing from unique channel-post commenters
 
 ---
 
@@ -42,7 +43,8 @@ cp .env.example .env
 1. Create a bot via [@BotFather](https://t.me/BotFather) → get `BOT_TOKEN`
 2. Add bot to your **Admin Group** (must be able to send messages)
 3. Add bot to **VIP Channel/Group** as **Administrator** with "Invite Users via Link" permission
-4. Set `ADMIN_GROUP_ID`, `VIP_CHANNEL_ID`, `ADMIN_IDS` in `.env`
+4. If you will use giveaways, link the channel to a **discussion group** and add the bot as admin there too.
+5. Set `ADMIN_GROUP_ID`, `VIP_CHANNEL_ID`, `ADMIN_IDS`, `DISCUSSION_GROUP_ID` in `.env`
 
 ### 5. Run locally (with ngrok)
 ```bash
@@ -126,6 +128,7 @@ telegram_vip_bot/
 | `WEBHOOK_URL` | ✅ | Public HTTPS URL (no trailing slash) |
 | `ADMIN_GROUP_ID` | ✅ | Admin review group chat ID (negative) |
 | `VIP_CHANNEL_ID` | ✅ | VIP channel/group ID (negative) |
+| `DISCUSSION_GROUP_ID` | ✅ | Discussion group ID linked to the channel (negative) |
 | `ADMIN_IDS` | ✅ | Comma-separated admin Telegram user IDs |
 | `SUPABASE_URL` | ✅ | Supabase project URL |
 | `SUPABASE_SERVICE_KEY` | ✅ | Supabase service role key |
@@ -137,6 +140,8 @@ telegram_vip_bot/
 | `REDIS_URL` | ❌ | Redis connection URL for shared session state (recommended in production) |
 | `UPDATE_WORKERS` | ❌ | Background workers for webhook update processing (default: 8) |
 | `UPDATE_QUEUE_SIZE` | ❌ | Max queued webhook updates before returning 503 (default: 1000) |
+| `BROADCAST_BATCH_SIZE` | ❌ | Number of users per broadcast batch (default: 20) |
+| `BROADCAST_BATCH_DELAY_SECONDS` | ❌ | Delay between broadcast batches in seconds (default: 0.4) |
 
 ### Production tuning notes
 
@@ -178,6 +183,11 @@ telegram_vip_bot/
 | `/setvideolink` | Set the target Telegram invite/channel link for a specific video. When users buy this video, they receive this link automatically upon approval. |
 | `/setbundletext` | Update the text displayed when a user clicks the "Bundle" purchase option. |
 | `/userstats` | View a quick statistical report of the total number of users and users who joined today. |
+| `/broadcast` | Start admin broadcast flow with selectable user segments (all, paid, no-order, single buyers, bundle buyers). |
+| `/giveaway_start <post_link_or_id> <winner_count>` | Start a giveaway for a channel post. Counts unique commenters in the discussion group. |
+| `/giveaway_draw <giveaway_id_or_post_link>` | Randomly pick winners from unique commenters (no duplicates). |
+| `/giveaway_stats <giveaway_id_or_post_link>` | Show unique entry count and recent comments. |
+| `/giveaway_reset <giveaway_id_or_post_link>` | Reset a drawn giveaway so it can be drawn again. |
 | `/cancel` | Cancel any ongoing admin flow (adding, deleting, link setting) without saving. |
 | *(Reply to Support)* | If an admin **Replies** to a Support Ticket or Payment inside the Admin Group with Text, Photo, or Video, the bot will secretly copy and forward that reply directly to the User's DM! |
 

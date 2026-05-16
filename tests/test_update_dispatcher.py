@@ -45,6 +45,27 @@ async def test_dispatcher_returns_false_when_queue_is_full() -> None:
     assert dispatcher.enqueue_raw({"id": 2}) is False
 
 
+async def test_dispatcher_deduplicates_same_update_id() -> None:
+    app = FakeApp()
+    dispatcher = UpdateDispatcher(
+        app=app,
+        workers=1,
+        queue_size=16,
+        decode_fn=lambda raw, _bot: raw,
+    )
+
+    await dispatcher.start()
+    assert dispatcher.enqueue_raw({"update_id": 101, "id": "first"}) is True
+    # Duplicate delivery should be treated as accepted but skipped.
+    assert dispatcher.enqueue_raw({"update_id": 101, "id": "duplicate"}) is True
+
+    await asyncio.wait_for(_wait_processed(app, 1), timeout=2)
+    await dispatcher.stop()
+
+    assert len(app.processed) == 1
+    assert app.processed[0]["id"] == "first"
+
+
 async def _wait_processed(app: FakeApp, expected: int) -> None:
     while len(app.processed) < expected:
         await asyncio.sleep(0.01)

@@ -3,6 +3,7 @@ db/users.py — User CRUD operations via Supabase.
 """
 from typing import Optional
 from db.client import get_supabase
+from db.orders import get_approved_order_user_ids, get_all_order_user_ids
 from utils.db_async import run_blocking
 
 
@@ -66,3 +67,53 @@ async def get_user_stats() -> dict:
     daily = res_daily.count if res_daily.count is not None else 0
     
     return {"total": total, "daily": daily}
+
+
+async def get_active_user_ids() -> list[int]:
+    """Return all non-banned users."""
+    sb = get_supabase()
+    result = await run_blocking(
+        lambda: sb.table("users").select("telegram_id").neq("status", "banned").execute()
+    )
+    rows = result.data or []
+    return [int(row["telegram_id"]) for row in rows if row.get("telegram_id") is not None]
+
+
+async def _filter_active(user_ids: list[int]) -> list[int]:
+    if not user_ids:
+        return []
+    sb = get_supabase()
+    result = await run_blocking(
+        lambda: sb.table("users")
+        .select("telegram_id")
+        .neq("status", "banned")
+        .in_("telegram_id", user_ids)
+        .execute()
+    )
+    rows = result.data or []
+    return [int(row["telegram_id"]) for row in rows if row.get("telegram_id") is not None]
+
+
+async def get_paid_user_ids() -> list[int]:
+    """Users that have at least one approved order."""
+    ids = await get_approved_order_user_ids()
+    return await _filter_active(ids)
+
+
+async def get_single_buyer_user_ids() -> list[int]:
+    """Users that have at least one approved single order."""
+    ids = await get_approved_order_user_ids(order_type="single")
+    return await _filter_active(ids)
+
+
+async def get_bundle_buyer_user_ids() -> list[int]:
+    """Users that have at least one approved bundle order."""
+    ids = await get_approved_order_user_ids(order_type="bundle")
+    return await _filter_active(ids)
+
+
+async def get_no_order_user_ids() -> list[int]:
+    """Users that have never placed an order."""
+    active_ids = set(await get_active_user_ids())
+    ordered_ids = set(await get_all_order_user_ids())
+    return list(active_ids - ordered_ids)

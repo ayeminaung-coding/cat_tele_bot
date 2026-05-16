@@ -87,6 +87,16 @@ class RedisSessionManager:
             raise RuntimeError("redis package is required for RedisSessionManager") from exc
 
         self._redis = redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
+        self._locks: dict[int, asyncio.Lock] = {}
+        self._locks_guard = asyncio.Lock()
+
+    async def _get_lock(self, user_id: int) -> asyncio.Lock:
+        """Get or create a per-user lock for thread-safe session updates."""
+        lock = self._locks.get(user_id)
+        if lock is not None:
+            return lock
+        async with self._locks_guard:
+            return self._locks.setdefault(user_id, asyncio.Lock())
 
     def _key(self, user_id: int) -> str:
         return f"session:{user_id}"
@@ -100,28 +110,43 @@ class RedisSessionManager:
             "updated_at": time.time(),
         }
 
-    async def get(self, user_id: int) -> dict:
+    async def _reset_locked(self, user_id: int) -> None:
+        """Reset session while caller already holds the per-user lock."""
+        await self._redis.set(self._key(user_id), json.dumps(self._default()), ex=SESSION_TTL)
+
+    async def _read_locked(self, user_id: int) -> dict:
+        """Read/validate session while caller already holds the per-user lock."""
         payload = await self._redis.get(self._key(user_id))
         if not payload:
             return self._default()
+
         try:
             session = json.loads(payload)
             if time.time() - session.get("updated_at", 0) > SESSION_TTL:
-                await self.reset(user_id)
+                await self._reset_locked(user_id)
                 return self._default()
             return session
         except Exception:
-            await self.reset(user_id)
+            await self._reset_locked(user_id)
             return self._default()
 
+    async def get(self, user_id: int) -> dict:
+        lock = await self._get_lock(user_id)
+        async with lock:
+            return await self._read_locked(user_id)
+
     async def set(self, user_id: int, **kwargs) -> None:
-        current = await self.get(user_id)
-        current.update(kwargs)
-        current["updated_at"] = time.time()
-        await self._redis.set(self._key(user_id), json.dumps(current), ex=SESSION_TTL)
+        lock = await self._get_lock(user_id)
+        async with lock:
+            current = await self._read_locked(user_id)
+            current.update(kwargs)
+            current["updated_at"] = time.time()
+            await self._redis.set(self._key(user_id), json.dumps(current), ex=SESSION_TTL)
 
     async def reset(self, user_id: int) -> None:
-        await self._redis.set(self._key(user_id), json.dumps(self._default()), ex=SESSION_TTL)
+        lock = await self._get_lock(user_id)
+        async with lock:
+            await self._reset_locked(user_id)
 
     async def get_state(self, user_id: int) -> str:
         session = await self.get(user_id)

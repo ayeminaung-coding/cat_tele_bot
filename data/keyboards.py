@@ -20,7 +20,7 @@ def start_inline_keyboard() -> InlineKeyboardMarkup:
     """Inline keyboard shown under the welcome text."""
     return InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ် - 1000 ကျပ်", callback_data="main_buy_single")],
+            [InlineKeyboardButton("🎬 ဇာတ်လမ်း တစ်ပုဒ်ပဲ VIPဝင်မယ်", callback_data="main_buy_single")],
             [InlineKeyboardButton("📦 ဇာတ်လမ်း 15ပုဒ်  VIPဝင်မယ် - 5000 ကျပ်", callback_data="main_buy_bundle")],
         ]
     )
@@ -60,6 +60,37 @@ def admin_action_keyboard(order_id: str) -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton("✅ အတည်ပြုမည်", callback_data=f"approve:{order_id}"),
             InlineKeyboardButton("❌ ငြင်းပယ်မည်", callback_data=f"reject:{order_id}"),
+        ]
+    ])
+
+
+def join_request_admin_keyboard(chat_id: int, user_id: int) -> InlineKeyboardMarkup:
+    """Approve / reject buttons for channel join requests."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Approve Join", callback_data=f"jr:approve:{chat_id}:{user_id}"),
+            InlineKeyboardButton("❌ Reject Join", callback_data=f"jr:reject:{chat_id}:{user_id}"),
+        ]
+    ])
+
+
+def broadcast_segment_keyboard(counts: Dict[str, int]) -> InlineKeyboardMarkup:
+    """Admin broadcast segment picker with audience counts."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"All users ({counts.get('all', 0)})", callback_data="bc:seg:all")],
+        [InlineKeyboardButton(f"Paid users ({counts.get('paid', 0)})", callback_data="bc:seg:paid")],
+        [InlineKeyboardButton(f"No-order users ({counts.get('no_order', 0)})", callback_data="bc:seg:no_order")],
+        [InlineKeyboardButton(f"Single buyers ({counts.get('single', 0)})", callback_data="bc:seg:single")],
+        [InlineKeyboardButton(f"Bundle buyers ({counts.get('bundle', 0)})", callback_data="bc:seg:bundle")],
+        [InlineKeyboardButton("❌ Cancel", callback_data="bc:cancel")],
+    ])
+
+
+def broadcast_confirm_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Send", callback_data="bc:send"),
+            InlineKeyboardButton("❌ Cancel", callback_data="bc:cancel"),
         ]
     ])
 

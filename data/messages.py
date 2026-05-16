@@ -1,6 +1,8 @@
 """
 data/messages.py — Myanmar-language message templates for Video Bot.
 """
+import html
+
 from config import settings
 
 WELCOME = (
@@ -36,7 +38,9 @@ def single_payment_instructions(title: str, amount: int) -> str:
         f"📋 Note   : Noteမှာ drama လို့ရေးပေးနော်❤️\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"ငွေပေးချေပြီးပါက 📸 ငွေပေးချေမှု screenshot ကို "
-        f"ဒီ chat ထဲမှာ ပို့ပေးပါနော် ❤️‍🔥.."
+        f"ဒီ chat ထဲမှာ ပို့ပေးပါနော် ❤️‍🔥.. \n \n \n"
+        f"‼️‼️ည 12 နာရီ ကျော်မှဆို မနက်မှ ငွေရောက်မရောက် စစ်ဆေးနိုင်မှာမို \n"
+        f"မစောင့်နိုင်ရင် မနက်မှ၀ယ်ပေးပါ‼️‼️"
     )
 
 from data.bundle_manager import get_bundle_info
@@ -54,16 +58,28 @@ def bundle_payment_instructions(amount: int) -> str:
         f"📋 Note   : Noteမှာ drama လို့ရေးပေးနော်❤️\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"ငွေပေးချေပြီးပါက 📸 ငွေပေးချေမှု screenshot ကို "
-        f"ဒီ chat ထဲမှာ ပို့ပေးပါနော် ❤️‍🔥.."
+        f"ဒီ chat ထဲမှာ ပို့ပေးပါနော် ❤️‍🔥.. \n \n \n"
+        f"‼️‼️ည 12 နာရီ ကျော်မှဆို မနက်မှ ငွေရောက်မရောက် စစ်ဆေးနိုင်မှာမို \n"
+        f"မစောင့်နိုင်ရင် မနက်မှ၀ယ်ပေးပါ‼️‼️"
     )
 
 # ── PAYMENT COMMON ─────────────────────────────────────────────────────────
 
 PAYMENT_RECEIVED = (
     "✅ Screenshot လက်ခံရရှိပါပြီ!\n\n"
-    "⏳ Adminမှ စစ်ဆေးနေဆဲမို့ နာရီဝက်၊ တစ်နာရီလောက် စောင့်ပေးပါနော်..\n"
+    f"⏳ Adminမှ စစ်ဆေးနေဆဲမို့ 15 မိနစ် - နာရီဝက် လောက် စောင့်ပေးပါ..\n\n"
+    f"‼️ည 12 နာရီ ကျော်မှဆို မနက်မှ စစ်ဆေးပြီး စာပြန်ပါမယ်နော်‼️\n\n"
     "အတည်ပြုပြီးရင် Channel Linkကို ဒီChatမှာပဲ တိုက်ရိုက်ပေးပို့ပေးပါမယ်နော်\n\n"
     "ကျေးဇူးတင်ပါတယ်ရှင့် 🙏"
+)
+
+PAYMENT_RECEIVED_NIGHT = (
+    "✅ Screenshot လက်ခံရရှိပါပြီ!\n\n"
+    f"‼️ည 12 နာရီ ကျော်မှဆို မနက်မှ စစ်ဆေးပြီး စာပြန်ပါမယ်နော်‼️\n\n"
+    "🌙 ယခုအချိန်သည် Admin များ အနားယူချိန်ဖြစ်သဖြင့် မနက်ခင်းရောက်မှသာ "
+    "အတည်ပြုပေးနိုင်မည်ဖြစ်ကြောင်း ကြိုတင်အသိပေးအပ်ပါသည်။\n"
+    "အတည်ပြုပြီးရင် Channel Link ကို ဒီ Chat မှာပဲ တိုက်ရိုက်ပို့ပေးပါမယ်နော်။\n\n"
+    "နားလည်ပေးမှုအတွက် ကျေးဇူးတင်ပါတယ်ရှင့် 🙏"
 )
 
 # ── ADMIN ACTIONS ──────────────────────────────────────────────────────────
@@ -71,20 +87,33 @@ PAYMENT_RECEIVED = (
 def approval_message() -> str:
     return (
         f"🎉 ငွေပေးချေမှု အောင်မြင်ပါသည်။\n\n"
-        f"Admin မှ သင်ဝယ်ယူထားသော VIP channelကို တစ်နာရီအတွင်း ပေးပို့ပေးပါမယ်နော် 🎬"
+        f"Admin မှ သင်ဝယ်ယူထားသော VIP channelကို {settings.ADMIN_REVIEW_TIME_HOURS}နာရီအတွင်း ပေးပို့ပေးပါမယ်နော် 🎬"
         f"⚠️ မှတ်ချက် — ‌Channel ဝင်ရောက်ရာတွင် အဆင်မပြေဖြစ်ပါက ဆက်သွယ်ရန် - @whitecatadmin..\n "
     )
 
-def bundle_approval_message(invite_link: str) -> str:
-    return (
-        f"🎉 ငွေပေးချေမှု အောင်မြင်ပါသည်။\n\n"
-        f"အောက်ပါ လင့်မှတဆင့် VIP Channel သို့ ဝင်ရောက်နိုင်ပါပြီ (တစ်ယောက်ပဲဝင်လို့ရတယ်နော်)👇\n"
-        f"{invite_link}\n\n"
-        f"ဝယ်ယူအားပေးမှုအတွက် ကျေးဇူးတင်ပါတယ်ရှင့် ❤️‍🔥💞🙏 \n \n"
-        f"⚠️ မှတ်ချက် — ‌Channel ဝင်ရောက်ရာတွင် join ခလုတ်နှိပ်ပီးပါက လင့် invalid ဖြစ်သွားမှာပါ ..\n "
-        f"✅ White Cat Paid ကို search မှာ ရိုက်ရှာပြီး ဝင်ရောက်ကြည့်ပေးပါနော် \n "
-        f"🙅 Channel ဝင်ရောက်ရာတွင် အဆင်မပြေဖြစ်ပါက ဆက်သွယ်ရန် - @whitecatadmin..\n "
+def bundle_approval_message(invite_link: str = "", paid_link: str = "") -> str:
+    msg = f"🎉 ငွေပေးချေမှု အောင်မြင်ပါသည်။\n\n"
+
+    if invite_link:
+        msg += (
+            "🔗 Channel သို့ ဝင်ရောက်ရန် လင့်ခ် (‼️အရင်ဆုံး ဒီကိုနှိပ်ပါ‼️):\n"
+            f"👉👉 {invite_link}\n\n"
+        )
+
+    if paid_link:
+        msg += (
+            "🎬 ဇာတ်ကားကြည့်ရန် Channel Link\n"
+            f"{paid_link}\n\n"
+        )
+
+    if not invite_link:
+        msg += "⚠️ Invitation link ထုတ်မရသေးပါ။ အောက်က Channel Link (သို့) Search နဲ့ဝင်ပေးပါ။\n\n"
+
+    msg += (
+        "ဝယ်ယူအားပေးမှုအတွက် ကျေးဇူးတင်ပါတယ်ရှင့် ❤️‍🔥💞🙏 \n \n"
+        "🙅 Channel ဝင်ရောက်ရာတွင် အဆင်မပြေဖြစ်ပါက ဆက်သွယ်ရန် - @whitecatadmin..\n "
     )
+    return msg
 
 REJECTION_MESSAGE = (
     "❌ ငွေပေးချေမှု ငြင်းပယ်ခြင်းခံရပါသည်။\n\n"
@@ -104,18 +133,20 @@ def admin_caption(
     order_type: str, 
     amount: int, 
     order_id: str,
-    video_title: str | None = None
+    video_title: str | None = None,
+    risk_note: str | None = None,
 ) -> str:
     # Use HTML markdown linking so clicking the name goes directly to their DM
-    profile_link = f"<a href='tg://user?id={user_id}'>{first_name}</a>"
-    uname = f"@{username}" if username else "(username မရှိ)"
+    safe_first_name = html.escape(first_name or "User")
+    profile_link = f"<a href='tg://user?id={user_id}'>{safe_first_name}</a>"
+    uname = f"@{html.escape(username)}" if username else "(username မရှိ)"
     
     if order_type == "single":
-        item_text = f"🎬 ဇာတ်ကား တစ်ကား : {video_title}"
+        item_text = f"🎬 ဇာတ်ကား တစ်ကား : {html.escape(video_title or '')}"
     else:
         item_text = "📦 ဇာတ်ကား ၁၅ ကား Bundle"
 
-    return (
+    msg = (
         f"💰 ငွေပေးချေမှု တင်ပြချက်\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
         f"👤 အမည်  : {profile_link} ({uname})\n"
@@ -123,9 +154,14 @@ def admin_caption(
         f"{item_text}\n"
         f"💵 ပမာဏ  : {amount:,} ကျပ်\n"
         f"🔑 Order ID  : <code>{order_id}</code>\n"
-        f"━━━━━━━━━━━━━━━━━━━\n"
-        f"⬇️ အောက်မှ ဆုံးဖြတ်ချက်ချပါ:"
+        f"━━━━━━━━━━━━━━━━━━━"
     )
+
+    if risk_note:
+        msg += f"\n⚠️ Risk Flag: {html.escape(risk_note)}"
+
+    msg += "\n⬇️ အောက်မှ ဆုံးဖြတ်ချက်ချပါ:"
+    return msg
 
 def admin_approved_caption(admin_name: str) -> str:
     return f"✅ **{admin_name}** မှ အတည်ပြုပြီး"
@@ -234,18 +270,62 @@ def setchannelid_success(title: str) -> str:
 SETCHANNELID_CANCELLED = "❌ Channel ID သတ်မှတ်ခြင်း ပယ်ဖျက်ပြီ။"
 
 
+# ── BROADCAST FLOW ─────────────────────────────────────────────────────────
+
+BROADCAST_SEGMENT_PROMPT = (
+    "📣 Broadcast ပို့မယ့် User အုပ်စုကို ရွေးပါ။"
+)
+
+BROADCAST_ASK_MESSAGE = (
+    "✍️ ပို့မယ့် message ကို စာဖြင့် ရိုက်ထည့်ပါ။\n"
+    "(ပယ်ဖျက်လိုပါက Cancel ကိုနှိပ်ပါ)"
+)
+
+
+def broadcast_confirm_message(segment_label: str, total_users: int, body: str) -> str:
+    return (
+        "📋 Broadcast အတည်ပြုရန်\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        f"👥 Segment: {segment_label}\n"
+        f"🎯 Target Users: {total_users}\n\n"
+        "📝 Message Preview:\n"
+        f"{body}\n\n"
+        "အတည်ပြုရန် Send ကိုနှိပ်ပါ။"
+    )
+
+
+def broadcast_result_message(segment_label: str, target: int, sent: int, failed: int) -> str:
+    return (
+        "✅ Broadcast ပြီးပါပြီ\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        f"👥 Segment: {segment_label}\n"
+        f"🎯 Target: {target}\n"
+        f"✅ Sent: {sent}\n"
+        f"❌ Failed: {failed}"
+    )
+
+
+BROADCAST_CANCELLED = "❌ Broadcast ပယ်ဖျက်ပြီးပါပြီ။"
+
+
 # ── SINGLE VIDEO APPROVAL WITH LINK ────────────────────────────────────────
 
-def single_approval_with_link(title: str, link: str) -> str:
-    return (
+def single_approval_with_link(title: str, invite_link: str = "", channel_link: str = "") -> str:
+    msg = (
         f"🎉 ငွေပေးချေမှု အောင်မြင်ပါတယ်..\n\n"
         f"🎬 ဇာတ်ကားအမည် : {title}\n\n"
-        f"🔗 ဇာာတ်ကားကြည့်ရန်အတွက် အောက်ပါ လင့်ခ်ကို နှိပ်ပါ:\n"
-        f"{link}\n\n"
-        f" 📌‌admi‌n မှ တစ်နာရီအတွင်း approve လုပ်ပေးပါမယ်နော်..\n "
-        f"ခန လောက် စောင့်ပေးပါနော် .. \n"
+    )
+
+    if invite_link:
+        msg += f"🔗 Channel သို့ ဝင်ရောက်ရန် လင့်ခ် (‼️အရင်ဆုံး ဒီကိုနှိပ်ပါ‼️):\n 👉👉 {invite_link}\n\n"
+
+    if channel_link:
+        msg += f"🎬 ဇာတ်ကားကြည့်ရန် လင့်ခ်👇👇 :\n{channel_link}\n\n"
+    
+    msg += (
         f"ဝယ်ယူအားပေးမှုအတွက် ကျေးဇူးတင်ပါတယ်ရှင့် ❤️‍🔥💞🙏 \n \n "
-        f"⚠️ မှတ်ချက် — ‌Channel ဝင်ရောက်ရာတွင် join ခလုတ်နှိပ်ပီးပါက လင့် invalid ဖြစ်သွားမှာပါ ..\n "
-        f"✅ ဝယ်ထားတဲ့ ဇာတ်ကားနာမည်ကို search မှာ ရိုက်ရှာပြီး ဝင်ရောက်ကြည့်ပေးပါနော် \n "
+        # f"⚠️ မှတ်ချက် — ‌Channel ဝင်ရောက်ရာတွင် join ခလုတ်နှိပ်ပီးပါက လင့် invalid ဖြစ်သွားမှာပါ ..\n \n "
+        # f"⚠️ ဝယ်ထားတဲ့ ဇာတ်ကားနာမည်ကို search မှာ ရိုက်ရှာပြီး ဝင်ရောက်ကြည့်ပေးပါ \n \n "
         f"🙅 Channel ဝင်ရောက်ရာတွင် အဆင်မပြေဖြစ်ပါက ဆက်သွယ်ရန် - @whitecatadmin..\n "
     )
+    return msg

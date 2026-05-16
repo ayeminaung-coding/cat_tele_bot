@@ -1,6 +1,7 @@
 """
 handlers/admin_handler.py — Admin group: forward order + approve/reject callbacks.
 """
+import asyncio
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -48,6 +49,56 @@ async def userstats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     )
     await update.message.reply_text(msg, parse_mode="HTML")
 
+
+async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin-only Telegram /health command."""
+    if update.effective_user.id not in settings.ADMIN_IDS:
+        await update.message.reply_text("⛔ ဤ command ကို Admin သာ သုံးနိုင်သည်။")
+        return
+
+    health_status = "ok"
+
+    # Database check
+    db_text = "connected"
+    try:
+        from db.client import get_supabase
+        sb = get_supabase()
+        await asyncio.to_thread(
+            lambda: sb.table("users").select("telegram_id").limit(1).execute()
+        )
+    except Exception as e:
+        db_text = f"error: {str(e)[:50]}"
+        health_status = "degraded"
+
+    # Bot check
+    bot_text = "unknown"
+    try:
+        me = await context.bot.get_me()
+        bot_text = f"@{me.username}"
+    except Exception as e:
+        bot_text = f"error: {str(e)[:50]}"
+        health_status = "degraded"
+
+    # Queue check (if available)
+    queue_line = "n/a"
+    dispatcher = context.application.bot_data.get("update_dispatcher")
+    if dispatcher and hasattr(dispatcher, "queue_size") and hasattr(dispatcher, "queue_capacity"):
+        q_size = dispatcher.queue_size()
+        q_cap = dispatcher.queue_capacity()
+        utilization = (q_size / q_cap) if q_cap else 0.0
+        queue_line = f"{q_size}/{q_cap} ({utilization:.1%})"
+        if utilization >= 0.9:
+            health_status = "degraded"
+
+    msg = (
+        "🩺 <b>Bot Health</b>\n\n"
+        f"Status: <b>{health_status}</b>\n"
+        f"Database: <code>{db_text}</code>\n"
+        f"Bot: <code>{bot_text}</code>\n"
+        f"Queue: <code>{queue_line}</code>"
+    )
+    await update.message.reply_text(msg, parse_mode="HTML")
+
 async def forward_to_admin(
     context: ContextTypes.DEFAULT_TYPE,
     order_id: str,
@@ -57,9 +108,23 @@ async def forward_to_admin(
     order_type: str,
     amount: int,
     file_id: str,
-    video_title: str | None = None
+    video_title: str | None = None,
+    risk_note: str | None = None,
+    disable_notification: bool = False,
 ) -> int | None:
-    caption = admin_caption(user_id, username, first_name, order_type, amount, order_id, video_title)
+    caption = admin_caption(
+        user_id,
+        username,
+        first_name,
+        order_type,
+        amount,
+        order_id,
+        video_title,
+        risk_note,
+    )
+    
+    if disable_notification:
+        caption = "🌙 [Night Order]\n\n" + caption
 
     try:
         msg = await async_retry(
@@ -69,6 +134,7 @@ async def forward_to_admin(
                 caption=caption,
                 parse_mode="HTML",
                 reply_markup=admin_action_keyboard(order_id),
+                disable_notification=disable_notification,
             ),
             label="forward_to_admin",
         )
@@ -109,15 +175,23 @@ async def handle_admin_callback(update: Update, context: ContextTypes.DEFAULT_TY
         msg_text = approval_message()
 
         if order_type == "bundle":
+            paid_link = (settings.VIP_INVITE_LINK_PAID or "").strip()
+            invite_url = ""
             try:
                 invite_link = await context.bot.create_chat_invite_link(
                     chat_id=settings.VIP_CHANNEL_ID,
                     member_limit=1,
                     name=f"Order {order_id}"
                 )
-                msg_text = bundle_approval_message(invite_link.invite_link)
+                invite_url = invite_link.invite_link
             except Exception as e:
                 logger.error(f"Failed to create VIP invite link: {e}")
+
+            # Always try to include the env channel link; include invite link when generated.
+            if invite_url or paid_link:
+                msg_text = bundle_approval_message(invite_url, paid_link)
+            else:
+                logger.warning("Bundle approval has no links: both invite link generation and VIP_INVITE_LINK_PAID are unavailable")
 
         elif order_type == "single":
             # Auto-send the stored channel link if one exists for this video
@@ -127,6 +201,10 @@ async def handle_admin_callback(update: Update, context: ContextTypes.DEFAULT_TY
                 video = await get_video(video_id)
                 if video:
                     channel_id = video.get("channel_id")
+                    video_title = video.get("title", "")
+                    channel_link = (video.get("channel_link") or "").strip()
+                    invite_url = ""
+
                     if channel_id:
                         try:
                             invite_link = await context.bot.create_chat_invite_link(
@@ -134,16 +212,17 @@ async def handle_admin_callback(update: Update, context: ContextTypes.DEFAULT_TY
                                 member_limit=1,
                                 name=f"Order {order_id}"
                             )
-                            msg_text = single_approval_with_link(video.get("title", ""), invite_link.invite_link)
+                            invite_url = invite_link.invite_link
                         except Exception as e:
                             logger.error(f"Failed to create VIP invite link for channel {channel_id}: {e}")
-                            channel_link = video.get("channel_link")
-                            if channel_link:
-                                msg_text = single_approval_with_link(video.get("title", ""), channel_link)
-                    else:
-                        channel_link = video.get("channel_link")
-                        if channel_link:
-                            msg_text = single_approval_with_link(video.get("title", ""), channel_link)
+
+                    # Always include both links when available: generated invite link + DB channel link.
+                    if invite_url and channel_link:
+                        msg_text = single_approval_with_link(video_title, invite_url, channel_link)
+                    elif invite_url:
+                        msg_text = single_approval_with_link(video_title, invite_url, "")
+                    elif channel_link:
+                        msg_text = single_approval_with_link(video_title, "", channel_link)
 
         try:
             from data.keyboards import after_payment_keyboard

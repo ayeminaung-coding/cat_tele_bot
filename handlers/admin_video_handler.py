@@ -227,9 +227,64 @@ async def setvideolink_save(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.message.reply_text(SETLINK_CANCELLED)
         return ConversationHandler.END
 
+    # Validate Telegram invite link format
+    if not _is_valid_telegram_link(link):
+        await update.message.reply_text(
+            "❌ မှားယွင်းသော လင့်ခ်ပုံစံ။\n\n"
+            "ဥပမာများ:\n"
+            "• https://t.me/+xxxxx\n"
+            "• https://telegram.me/joinchat/xxxxx\n"
+            "• https://t.me/xxxxx\n\n"
+            "ထပ်မံကြိုးစားပါ။"
+        )
+        # Restore state for retry
+        context.user_data["setlink_video_id"] = video_id
+        context.user_data["setlink_video_title"] = title
+        return WAITING_LINK
+
     await set_video_link(video_id, link)
     await update.message.reply_text(setlink_success(title))
     return ConversationHandler.END
+
+
+def _is_valid_telegram_link(link: str) -> bool:
+    """Validate Telegram invite/channel link format."""
+    from urllib.parse import urlparse
+    import re
+
+    try:
+        parsed = urlparse((link or "").strip())
+    except Exception:
+        return False
+
+    if parsed.scheme not in ("http", "https"):
+        return False
+
+    host = (parsed.netloc or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    if host not in ("t.me", "telegram.me"):
+        return False
+
+    path = (parsed.path or "").strip("/")
+    if not path:
+        return False
+
+    parts = path.split("/")
+    slug_re = re.compile(r"[A-Za-z0-9_-]{5,}")
+
+    # t.me/username or t.me/+invitecode
+    if len(parts) == 1:
+        slug = parts[0]
+        if slug.startswith("+"):
+            slug = slug[1:]
+        return bool(slug_re.fullmatch(slug))
+
+    # t.me/joinchat/invitecode
+    if len(parts) == 2 and parts[0].lower() == "joinchat":
+        return bool(slug_re.fullmatch(parts[1]))
+
+    return False
 
 
 async def setvideolink_cancel_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -298,17 +353,43 @@ async def setchannelid_save(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.message.reply_text(SETCHANNELID_CANCELLED)
         return ConversationHandler.END
 
+    # Validate Channel ID format (must be integer starting with -100)
     try:
         channel_id = int(channel_id_str)
+        if not _is_valid_channel_id(channel_id):
+            await update.message.reply_text(
+                "❌ မှားယွင်းသော Channel ID ပုံစံ။\n\n"
+                "Telegram Channel ID သည် -100 ဖြင့် စရပါမည်။\n"
+                "ဥပမာ: -1001234567890\n\n"
+                "ထပ်မံကြိုးစားပါ။"
+            )
+            # Restore state for retry
+            context.user_data["setchannelid_video_id"] = video_id
+            context.user_data["setchannelid_video_title"] = title
+            return WAITING_CHANNEL_ID
+
         await set_video_channel_id(video_id, channel_id)
         await update.message.reply_text(setchannelid_success(title))
     except ValueError:
-        await update.message.reply_text("❌ မှားယွင်းနေပါသည်။ သေချာသော Telegram Channel ID ဂဏန်း (ဥပမာ: -1001234567) ကိုသာ ပေးပို့ပါ။")
+        await update.message.reply_text(
+            "❌ မှားယွင်းနေပါသည်။ သေချာသော Telegram Channel ID ဂဏန်း (ဥပမာ: -1001234567) ကိုသာ ပေးပို့ပါ။"
+        )
         # Give them another chance
         context.user_data["setchannelid_video_id"] = video_id
         context.user_data["setchannelid_video_title"] = title
         return WAITING_CHANNEL_ID
     return ConversationHandler.END
+
+
+def _is_valid_channel_id(channel_id: int) -> bool:
+    """Validate Telegram Channel ID format (must start with -100)."""
+    # Telegram channel IDs start with -100 and continue with digits.
+    channel_str = str(channel_id)
+    return (
+        channel_str.startswith("-100")
+        and len(channel_str) > 4
+        and channel_str[4:].isdigit()
+    )
 
 async def setchannelid_cancel_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Admin tapped cancel in the video picker."""
