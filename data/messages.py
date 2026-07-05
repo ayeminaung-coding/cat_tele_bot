@@ -1,6 +1,7 @@
 """
 data/messages.py — Myanmar-language message templates for Video Bot.
 """
+
 import html
 
 from config import settings
@@ -11,21 +12,16 @@ WELCOME = (
     "အောက်ပါ ရွေးချယ်စရာများမှ တစ်ခုကို နှိပ်ပါ...👇"
 )
 
-BANNED = (
-    "⛔ အကောင့်ကို ပိတ်ဆို့ထားသောကြောင့်\n"
-    "ဝန်ဆောင်မှုကို ရယူ၍မရနိုင်ပါ။\n"
-    "Admin ထံ ဆက်သွယ်ပါ @whitecatadmin"
-)
+BANNED = "⛔ အကောင့်ကို ပိတ်ဆို့ထားသောကြောင့်\nဝန်ဆောင်မှုကို ရယူ၍မရနိုင်ပါ။\nAdmin ထံ ဆက်သွယ်ပါ @whitecatadmin"
 
 # ── SINGLE VIDEO FLOW ───────────────────────────────────────────────────────
 
 SINGLE_VIDEO_HEADER = "🎬 ဝယ်ယူလိုသော ဇာတ်ကားကို ရွေးချယ်ပါ:"
 
+
 def video_unavailable(title: str) -> str:
-    return (
-        f"⚠️ '{title}' ကို လောလောဆယ် ဝယ်ယူ၍ မရနိုင်သေးပါ။\n"
-        f"အခြား ဇာတ်ကားကို ရွေးချယ်ပါ။"
-    )
+    return f"⚠️ '{title}' ကို လောလောဆယ် ဝယ်ယူ၍ မရနိုင်သေးပါ။\nအခြား ဇာတ်ကားကို ရွေးချယ်ပါ။"
+
 
 def single_payment_instructions(title: str, amount: int) -> str:
     return (
@@ -43,9 +39,11 @@ def single_payment_instructions(title: str, amount: int) -> str:
         f"မစောင့်နိုင်ရင် မနက်မှ၀ယ်ပေးပါ‼️‼️"
     )
 
+
 from data.bundle_manager import get_bundle_info
 
 # ── BUNDLE FLOW ─────────────────────────────────────────────────────────────
+
 
 def bundle_payment_instructions(amount: int) -> str:
     return (
@@ -62,6 +60,7 @@ def bundle_payment_instructions(amount: int) -> str:
         f"‼️‼️ည 12 နာရီ ကျော်မှဆို မနက်မှ ငွေရောက်မရောက် စစ်ဆေးနိုင်မှာမို \n"
         f"မစောင့်နိုင်ရင် မနက်မှ၀ယ်ပေးပါ‼️‼️"
     )
+
 
 # ── PAYMENT COMMON ─────────────────────────────────────────────────────────
 
@@ -84,6 +83,7 @@ PAYMENT_RECEIVED_NIGHT = (
 
 # ── ADMIN ACTIONS ──────────────────────────────────────────────────────────
 
+
 def approval_message() -> str:
     return (
         f"🎉 ငွေပေးချေမှု အောင်မြင်ပါသည်။\n\n"
@@ -91,29 +91,27 @@ def approval_message() -> str:
         f"⚠️ မှတ်ချက် — ‌Channel ဝင်ရောက်ရာတွင် အဆင်မပြေဖြစ်ပါက ဆက်သွယ်ရန် - @whitecatadmin..\n "
     )
 
+
 def bundle_approval_message(invite_link: str = "", paid_link: str = "") -> str:
     msg = f"🎉 ငွေပေးချေမှု အောင်မြင်ပါသည်။\n\n"
 
     if invite_link:
-        msg += (
-            "🔗 Channel သို့ ဝင်ရောက်ရန် လင့်ခ် (‼️အရင်ဆုံး ဒီကိုနှိပ်ပါ‼️):\n"
-            f"👉👉 {invite_link}\n\n"
-        )
+        msg += f"🔗 Channel သို့ ဝင်ရောက်ရန် လင့်ခ် (‼️အရင်ဆုံး ဒီကိုနှိပ်ပါ‼️):\n👉👉 {invite_link}\n\n"
 
     if paid_link:
-        msg += (
-            "🎬 ဇာတ်ကားကြည့်ရန် Channel Link\n"
-            f"{paid_link}\n\n"
-        )
+        msg += f"🎬 ဇာတ်ကားကြည့်ရန် Channel Link\n{paid_link}\n\n"
 
     if not invite_link:
-        msg += "⚠️ Invitation link ထုတ်မရသေးပါ။ အောက်က Channel Link (သို့) Search နဲ့ဝင်ပေးပါ။\n\n"
+        msg += (
+            "⚠️ Invitation link ထုတ်မရသေးပါ။ အောက်က Channel Link (သို့) Search နဲ့ဝင်ပေးပါ။\n\n"
+        )
 
     msg += (
         "ဝယ်ယူအားပေးမှုအတွက် ကျေးဇူးတင်ပါတယ်ရှင့် ❤️‍🔥💞🙏 \n \n"
         "🙅 Channel ဝင်ရောက်ရာတွင် အဆင်မပြေဖြစ်ပါက ဆက်သွယ်ရန် - @whitecatadmin..\n "
     )
     return msg
+
 
 REJECTION_MESSAGE = (
     "❌ ငွေပေးချေမှု ငြင်းပယ်ခြင်းခံရပါသည်။\n\n"
@@ -126,12 +124,13 @@ REJECTION_MESSAGE = (
 
 # ── ADMIN GROUP CAPTIONS ───────────────────────────────────────────────────
 
+
 def admin_caption(
-    user_id: int, 
-    username: str | None, 
-    first_name: str, 
-    order_type: str, 
-    amount: int, 
+    user_id: int,
+    username: str | None,
+    first_name: str,
+    order_type: str,
+    amount: int,
     order_id: str,
     video_title: str | None = None,
     risk_note: str | None = None,
@@ -140,7 +139,7 @@ def admin_caption(
     safe_first_name = html.escape(first_name or "User")
     profile_link = f"<a href='tg://user?id={user_id}'>{safe_first_name}</a>"
     uname = f"@{html.escape(username)}" if username else "(username မရှိ)"
-    
+
     if order_type == "single":
         item_text = f"🎬 ဇာတ်ကား တစ်ကား : {html.escape(video_title or '')}"
     else:
@@ -148,66 +147,58 @@ def admin_caption(
 
     msg = (
         f"💰 ငွေပေးချေမှု တင်ပြချက်\n"
-        f"━━━━━━━━━━━━━━━━━━━\n"
-        f"👤 အမည်  : {profile_link} ({uname})\n"
-        f"🆔 User ID  : <code>{user_id}</code>\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"👤 မှတ်ပုံတင်သူ : {profile_link} ({uname})\n"
         f"{item_text}\n"
-        f"💵 ပမာဏ  : {amount:,} ကျပ်\n"
-        f"🔑 Order ID  : <code>{order_id}</code>\n"
-        f"━━━━━━━━━━━━━━━━━━━"
+        f"💰 ငွေပမာဏ : {amount:,} ကျပ်\n"
+        f"📊 Order ID : `{order_id}`\n"
+        f"━━━━━━━━━━━━━━━━━━\n\n"
     )
 
     if risk_note:
-        msg += f"\n⚠️ Risk Flag: {html.escape(risk_note)}"
+        msg += f"⚠️ သတိပြုရန် : {risk_note}\n\n"
 
-    msg += "\n⬇️ အောက်မှ ဆုံးဖြတ်ချက်ချပါ:"
+    msg += "⬇️ အောက်မှ ဆုံးဖြတ်ချက်ချပါ:"
     return msg
+
 
 def admin_approved_caption(admin_name: str) -> str:
     return f"✅ **{admin_name}** မှ အတည်ပြုပြီး"
 
+
 def admin_rejected_caption(admin_name: str) -> str:
     return f"❌ **{admin_name}** မှ ငြင်းပယ်ပြီး"
+
 
 # ── ERRORS ────────────────────────────────────────────────────────────────
 
 INVALID_FILE_TYPE = (
-    "⚠️ ဓာတ်ပုံသာ ပေးပို့ပါ။\n"
-    "လက်ခံသောဖော်မတ်: JPG, PNG\n\n"
-    "PDF, video သို့မဟုတ် အခြား ဖိုင်များ မလက်ခံပါ။"
+    "⚠️ ဓာတ်ပုံသာ ပေးပို့ပါ။\nလက်ခံသောဖော်မတ်: JPG, PNG\n\nPDF, video သို့မဟုတ် အခြား ဖိုင်များ မလက်ခံပါ။"
 )
-
 
 
 NOT_IN_PAYMENT_FLOW = (
-    "ဘယ်အမျိုးအစားကို ဝယ်ယူမှာလဲဆိုတာ ပြောပြပေးပါရှင့်\n"
-    "အောက်က Button တွေထဲက တစ်ခုကို နှိပ်ပြီး ရွေးချယ်ပေးပါ။"
+    "ဘယ်အမျိုးအစားကို ဝယ်ယူမှာလဲဆိုတာ ပြောပြပေးပါရှင့်\nအောက်က Button တွေထဲက တစ်ခုကို နှိပ်ပြီး ရွေးချယ်ပေးပါ။"
 )
 
 GENERIC_ERROR = (
-    "😔 တစ်ခုခု မှားယွင်းသွားပါသည်။\n"
-    "ခဏစောင့်ပြီး ထပ်မံ ကြိုးစားကြည့်ပါ။\n"
+    "⚠️ တစ်စုံတစ်ယောက်က အမှားတစ်ခုခုဖြစ်သွားပါတယ်။\n"
+    "ကျေးဇူးပြု၍ ထပ်မံ ကြိုးစားပါ။\n"
     "ပြဿနာ ဆက်ရှိနေပါက Admin ထံ ဆက်သွယ်ပါ။ \n ဆက်သွယ်ရန် - @whitecatadmin"
 )
 
-UPLOAD_FAILED = (
-    "⚠️ Screenshot တင်သွင်း မအောင်မြင်ပါ။\n"
-    "ကျေးဇူးပြု၍ ထပ်မံ ကြိုးစားပါ။"
-)
+UPLOAD_FAILED = "⚠️ Screenshot တင်သွင်း မအောင်မြင်ပါ။\nကျေးဇူးပြု၍ ထပ်မံ ကြိုးစားပါ။"
 
 # ── ADMIN VIDEO MANAGEMENT ─────────────────────────────────────────────────
 
 ADMIN_ONLY = "⛔ ဤ command ကို Admin သာ သုံးနိုင်သည်။"
 
-ASK_VIDEO_TITLE = (
-    "🎬 ထည့်သွင်းမည့် ဇာတ်ကားအမည် ရိုက်ထည့်ပါ:\n"
-    "(ပယ်ဖျက်ရန် /cancel )"
-)
 
-ASK_VIDEO_PRICE = (
-    "💰 ဈေးနှုန်း ရိုက်ထည့်ပါ (ကျပ်):\n"
-    "ဥပမာ — 1000"
-)
+# ── ADD VIDEO FLOW ─────────────────────────────────────────────────────────
+
+ASK_VIDEO_TITLE = "🎬 ထည့်သွင်းမည့် ဇာတ်ကားအမည် ရိုက်ထည့်ပါ:\n(ပယ်ဖျက်ရန် /cancel )"
+
+ASK_VIDEO_PRICE = "💰 ဈေးနှုန်း ရိုက်ထည့်ပါ (ကျပ်):\nဥပမာ — 1000"
 
 INVALID_PRICE = "⚠️ ကျပ် ပမာဏ ဂဏန်းဖြင့်သာ ရိုက်ထည့်ပါ။ ဥပမာ — 1000"
 
@@ -215,12 +206,10 @@ ADD_VIDEO_CANCELLED = "❌ ဇာတ်ကားထည့်ခြင်း ပ�
 
 
 def add_video_success(title: str, price: int) -> str:
-    return (
-        f"✅ ဇာတ်ကား ထည့်သွင်းပြီ!\n\n"
-        f"🎬 အမည် : {title}\n"
-        f"💰 ဈေးနှုန်း : {price:,} ကျပ်"
-    )
+    return f"✅ ဇာတ်ကား ထည့်သွင်းပြီ!\n\n🎬 အမည် : {title}\n💰 ဈေးနှုန်း : {price:,} ကျပ်"
 
+
+# ── DELETE VIDEO FLOW ──────────────────────────────────────────────────────
 
 ASK_DELETE_VIDEO = "🗑 ဖျက်မည့် ဇာတ်ကားကို ရွေးချယ်ပါ:"
 
@@ -264,22 +253,44 @@ ASK_SETCHANNELID_ID = (
     "(လုပ်ငန်းစဥ်ကို ရပ်တန့်ရန် /cancel ကိုနှိပ်ပါ။)"
 )
 
+
 def setchannelid_success(title: str) -> str:
     return f"✅ '{title}' အတွက် Channel ID သိမ်းပြီ!"
 
+
 SETCHANNELID_CANCELLED = "❌ Channel ID သတ်မှတ်ခြင်း ပယ်ဖျက်ပြီ။"
+
+# ── VIEW VIDEO INFO FLOW ────────────────────────────────────────────────────
+
+ASK_VIEW_VIDEO = "🎬 ကြည့်ရှုလိုသော ဇာတ်ကားကို ရွေးချယ်ပါ:"
+
+NO_VIDEO_FOUND = "❌ ဇာတ်ကား မတွေ့ရပါ။"
+
+VIEW_VIDEO_CANCELLED = "❌ ဇာတ်ကားကြည့်ရှုမှု ပယ်ဖျက်ပြီ။"
+
+
+def video_info_display(vid: dict) -> str:
+    """Display single video information for admin."""
+    channel_link = vid.get("channel_link") or "❌ မသတ်မှတ်ထားပါ"
+    channel_id = vid.get("channel_id") or "❌ မသတ်မှတ်ထားပါ"
+    status_emoji = "✅" if vid.get("status") == "available" else "❌"
+
+    return (
+        f"🎬 ဇာတ်ကားအမည် : {vid['title']}\n"
+        f"🆔 Video ID : `{vid['id']}`\n"
+        f"💰 ဈေးနှုန်း : {vid['price']:,} ကျပ်\n"
+        f"🔗 Channel Link : {channel_link}\n"
+        f"🆔 Channel ID : {channel_id}\n"
+        f"{status_emoji} Status : {vid['status']}\n"
+        f"📅 ဖန်တီးချိန် : {vid['created_at']}"
+    )
 
 
 # ── BROADCAST FLOW ─────────────────────────────────────────────────────────
 
-BROADCAST_SEGMENT_PROMPT = (
-    "📣 Broadcast ပို့မယ့် User အုပ်စုကို ရွေးပါ။"
-)
+BROADCAST_SEGMENT_PROMPT = "📣 Broadcast ပို့မယ့် User အုပ်စုကို ရွေးပါ။"
 
-BROADCAST_ASK_MESSAGE = (
-    "✍️ ပို့မယ့် message ကို စာဖြင့် ရိုက်ထည့်ပါ။\n"
-    "(ပယ်ဖျက်လိုပါက Cancel ကိုနှိပ်ပါ)"
-)
+BROADCAST_ASK_MESSAGE = "✍️ ပို့မယ့် message ကို စာဖြင့် ရိုက်ထည့်ပါ။\n(ပယ်ဖျက်လိုပါက Cancel ကိုနှိပ်ပါ)"
 
 
 def broadcast_confirm_message(segment_label: str, total_users: int, body: str) -> str:
@@ -294,7 +305,9 @@ def broadcast_confirm_message(segment_label: str, total_users: int, body: str) -
     )
 
 
-def broadcast_result_message(segment_label: str, target: int, sent: int, failed: int) -> str:
+def broadcast_result_message(
+    segment_label: str, target: int, sent: int, failed: int
+) -> str:
     return (
         "✅ Broadcast ပြီးပါပြီ\n"
         "━━━━━━━━━━━━━━━━━━\n"
@@ -310,18 +323,18 @@ BROADCAST_CANCELLED = "❌ Broadcast ပယ်ဖျက်ပြီးပါပ�
 
 # ── SINGLE VIDEO APPROVAL WITH LINK ────────────────────────────────────────
 
-def single_approval_with_link(title: str, invite_link: str = "", channel_link: str = "") -> str:
-    msg = (
-        f"🎉 ငွေပေးချေမှု အောင်မြင်ပါတယ်..\n\n"
-        f"🎬 ဇာတ်ကားအမည် : {title}\n\n"
-    )
+
+def single_approval_with_link(
+    title: str, invite_link: str = "", channel_link: str = ""
+) -> str:
+    msg = f"🎉 ငွေပေးချေမှု အောင်မြင်ပါတယ်..\n\n🎬 ဇာတ်ကားအမည် : {title}\n\n"
 
     if invite_link:
         msg += f"🔗 Channel သို့ ဝင်ရောက်ရန် လင့်ခ် (‼️အရင်ဆုံး ဒီကိုနှိပ်ပါ‼️):\n 👉👉 {invite_link}\n\n"
 
     if channel_link:
         msg += f"🎬 ဇာတ်ကားကြည့်ရန် လင့်ခ်👇👇 :\n{channel_link}\n\n"
-    
+
     msg += (
         f"ဝယ်ယူအားပေးမှုအတွက် ကျေးဇူးတင်ပါတယ်ရှင့် ❤️‍🔥💞🙏 \n \n "
         # f"⚠️ မှတ်ချက် — ‌Channel ဝင်ရောက်ရာတွင် join ခလုတ်နှိပ်ပီးပါက လင့် invalid ဖြစ်သွားမှာပါ ..\n \n "

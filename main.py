@@ -1,6 +1,7 @@
 """
 main.py — FastAPI entry point. Receives Telegram webhook updates.
 """
+
 import asyncio
 import json
 import logging
@@ -49,12 +50,26 @@ async def lifespan(app: FastAPI):
     if session_manager and hasattr(session_manager, "close"):
         await session_manager.close()
     await ptb_app.stop()
-    await ptb_app.bot.delete_webhook()
+    # DO NOT delete the webhook on shutdown!
+    # If the container scales to 0, deleting the webhook will stop it from ever waking up again.
+    # await ptb_app.bot.delete_webhook()
     await ptb_app.shutdown()
     logger.info("Bot stopped.")
 
 
 app = FastAPI(title="Telegram VIP Bot", lifespan=lifespan)
+
+
+@app.get("/")
+async def root():
+    """Basic health endpoint for platform probes."""
+    return {"status": "ok"}
+
+
+@app.get("/webhook")
+async def webhook_probe() -> Response:
+    """Allow GET probes on the webhook path without failing health checks."""
+    return Response(status_code=status.HTTP_200_OK)
 
 
 @app.post("/webhook")
@@ -93,6 +108,7 @@ async def health_check():
     # Check database connectivity
     try:
         from db.client import get_supabase
+
         sb = get_supabase()
         result = await asyncio.to_thread(
             lambda: sb.table("users").select("telegram_id").limit(1).execute()
@@ -121,4 +137,5 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host="0.0.0.0", port=settings.PORT, reload=False)

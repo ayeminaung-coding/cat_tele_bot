@@ -1,53 +1,59 @@
 """
 bot_app.py — Builds and configures the python-telegram-bot Application.
 """
+
 from telegram.ext import (
     Application,
-    CommandHandler,
-    MessageHandler,
     CallbackQueryHandler,
     ChatJoinRequestHandler,
+    CommandHandler,
+    MessageHandler,
     filters,
 )
+
 from config import settings
-from handlers.user_handler import (
-    start_command,
-    handle_callback,
-    handle_stale_callback,
-    handle_user_text,
+from handlers.admin_handler import (
+    handle_admin_callback,
+    health_command,
+    userstats_command,
 )
-from handlers.payment_handler import handle_screenshot
-from handlers.admin_handler import handle_admin_callback, userstats_command, health_command
 from handlers.admin_video_handler import (
     build_addvideo_conv,
-    build_setvideolink_conv,
     build_setbundletext_conv,
     build_setchannelid_conv,
+    build_setvideolink_conv,
+    build_viewvideo_conv,
     deletevideo_start,
-    handle_delete_select,
-    handle_delete_confirm,
     handle_delete_cancel,
+    handle_delete_confirm,
+    handle_delete_select,
 )
-from handlers.message_router import handle_admin_reply
-from handlers.join_request_handler import handle_join_request, handle_join_request_callback
 from handlers.broadcast_handler import build_broadcast_conv
 from handlers.error_handler import handle_error
 from handlers.giveaway_handler import (
-    giveaway_start_command,
     giveaway_draw_command,
-    giveaway_stats_command,
     giveaway_reset_command,
+    giveaway_start_command,
+    giveaway_stats_command,
     handle_giveaway_comment,
+)
+from handlers.join_request_handler import (
+    handle_join_request,
+    handle_join_request_callback,
+)
+from handlers.message_router import handle_admin_reply
+from handlers.payment_handler import handle_screenshot
+from handlers.user_handler import (
+    handle_callback,
+    handle_stale_callback,
+    handle_user_text,
+    start_command,
 )
 from utils.session import create_session_manager
 
 
 def build_application() -> Application:
-    app = (
-        Application.builder()
-        .token(settings.BOT_TOKEN)
-        .build()
-    )
+    app = Application.builder().token(settings.BOT_TOKEN).build()
 
     app.bot_data["session_manager"] = create_session_manager()
 
@@ -59,10 +65,16 @@ def build_application() -> Application:
 
     # ── Inline button callbacks ────────────────────────────
     # Main menu selections, video selection, and back buttons
-    app.add_handler(CallbackQueryHandler(handle_callback, pattern=r"^(main_|buy:|video:|page:|back_to_main|retry)"))
-    
+    app.add_handler(
+        CallbackQueryHandler(
+            handle_callback, pattern=r"^(main_|buy:|video:|page:|back_to_main|retry)"
+        )
+    )
+
     # ── Admin approve/reject (prefix: "approve:" / "reject:")
-    app.add_handler(CallbackQueryHandler(handle_admin_callback, pattern=r"^(approve|reject):"))
+    app.add_handler(
+        CallbackQueryHandler(handle_admin_callback, pattern=r"^(approve|reject):")
+    )
     app.add_handler(CallbackQueryHandler(handle_join_request_callback, pattern=r"^jr:"))
 
     # ── Admin video management ─────────────────────────────
@@ -77,9 +89,12 @@ def build_application() -> Application:
     app.add_handler(build_setvideolink_conv())
     app.add_handler(build_setchannelid_conv())
     app.add_handler(build_setbundletext_conv())
+    app.add_handler(build_viewvideo_conv())
     app.add_handler(CommandHandler("deletevideo", deletevideo_start))
     app.add_handler(CallbackQueryHandler(handle_delete_select, pattern=r"^del_select:"))
-    app.add_handler(CallbackQueryHandler(handle_delete_confirm, pattern=r"^del_confirm:"))
+    app.add_handler(
+        CallbackQueryHandler(handle_delete_confirm, pattern=r"^del_confirm:")
+    )
     app.add_handler(CallbackQueryHandler(handle_delete_cancel, pattern=r"^del_cancel$"))
 
     # Fallback for legacy/outdated inline callback payloads from old messages
@@ -107,7 +122,7 @@ def build_application() -> Application:
         MessageHandler(
             filters.Chat(settings.DISCUSSION_GROUP_ID) & ~filters.COMMAND,
             handle_giveaway_comment,
-        )   
+        )
     )
 
     # ── Join requests from VIP channels/groups ─────────────
@@ -126,4 +141,3 @@ def build_application() -> Application:
     app.add_error_handler(handle_error)
 
     return app
-
